@@ -1,7 +1,21 @@
 # Hexagon
+- [Hexagon](#hexagon)
+  - [Goal](#goal)
+  - [Implementation](#implementation)
+  - [Gameplay](#gameplay)
+  - [References](#references)
+    - [Theories](#theories)
+    - [Implementations](#implementations)
+  - [Timeline & To-do List](#timeline--to-do-list)
+    - [Versions](#versions)
+    - [Elements](#elements)
+    - [Gameplay](#gameplay-1)
+    - [UI](#ui)
 
 ## Goal
-Implement a turn-based game involving two or more players, where they move, collaborate, and fight in a hexagonal grid. Players have a variety of possible moves and attack ranges based on their skills.
+Implement a game involving one or more players, where they move, collaborate, and fight enemies in a hexagonal grid. 
+
+Players have a variety of possible moves and attack ranges based on their skills.
 
 ## Implementation
 The prototype is implemented in HTML5 and JavaScript.
@@ -20,3 +34,36 @@ A few kinds of attack is available for player to choose. Different attack may ha
 
 ### Implementations
 * [Stage.js | 2D HTML5 rendering and layout engine](https://github.com/shakiba/stage.js)
+
+--- 
+
+## Timeline & To-do List
+### Versions
+* Lv. 1 - A player can move from one hexagon cell to another within a defined range
+* Lv. 2 - A player can move and attack enemies while moving in the hexagon grid
+### Elements
+Lv. 1
+- [ ] create hexagon grid
+- [ ] create basic shape for players and enemies
+- [ ] create basic shape for environment and obstacles
+
+Lv. 2
+- [ ] create character for players and enemies
+
+### Gameplay
+Lv. 1
+- [ ] move player from one hexagon cell to another with mouse click
+- [ ] show range of possible moves with color
+- [ ] show different types of moves
+- [ ] constrain player move within the range
+
+Lv. 2
+- [ ] add enemies that appear randomly in the view
+- [ ] let player attack the enemies and let them disappear if they die
+
+### UI
+Lv. 1
+- [ ] add styled intructions
+
+Lv. 2
+- [ ] add progress bar to attack
