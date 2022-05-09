@@ -1,0 +1,51 @@
+{
+  "name": "stage-js",
+  "version": "0.9.4",
+  "description": "2D HTML5 Rendering and Layout",
+  "homepage": "http://piqnt.com/stage.js/",
+  "author": "Ali Shakiba (http://shakiba.me/stage.js)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/shakiba/stage.js.git"
+  },
+  "keywords": [
+    "html5",
+    "game",
+    "rendering",
+    "layout",
+    "engine",
+    "2d",
+    "canvas",
+    "cross-platform",
+    "web",
+    "mobile"
+  ],
+  "main": "lib/index.js",
+  "files": [
+    "dist/",
+    "doc/",
+    "ext/",
+    "lib/",
+    "platform/",
+    "test/"
+  ],
+  "devDependencies": {
+    "expect.js": "*",
+    "express": "^4.17.1",
+    "mocha": "^6.2.3",
+    "nodemon": "^1.19.1",
+    "sandboxed-module": "^2.0.0",
+    "serve-index": "^1.9.1",
+    "sinon": "^9.0.2",
+    "webpack": "^4.33.0",
+    "webpack-cli": "^3.3.3",
+    "webpack-dev-middleware": "^3.7.0"
+  },
+  "scripts": {
+    "test": "mocha test/*.js",
+    "build": "webpack -p",
+    "watch": "webpack --watch",
+    "dev": "nodemon server.js"
+  }
+}
