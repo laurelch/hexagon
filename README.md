@@ -40,10 +40,11 @@ A few kinds of attack is available for player to choose. Different attack may ha
 ## Timeline & To-do List
 ### Versions
 * Lv. 1 - A player can move from one hexagon cell to another within a defined range
+  * start: 5/9/22
 * Lv. 2 - A player can move and attack enemies while moving in the hexagon grid
 ### Elements
 Lv. 1
-- [ ] create hexagon grid
+- [x] create hexagon grid
 - [ ] create basic shape for players and enemies
 - [ ] create basic shape for environment and obstacles
 
