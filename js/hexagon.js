@@ -50,7 +50,8 @@ function drawHexagonGrid(){
     max_y=window.innerHeight/(2*R)+1;
     for(let j=0;j<max_y;j++){
         for(let i=0;i<max_x;i++){
-            drawHexagon(i,j);
+            // drawHexagon(i,j);
+            drawHexagonPath(i,j);
         }
     }
 }
@@ -74,7 +75,7 @@ function getHexIndex(x,y){
         hexs.push(group_i,group_j+1);
     }else{
         hexs.push(group_i,group_j);
-        hexs.push(group_i,group_j+1);
+        hexs.push(group_i+1,group_j);
         hexs.push(group_i+1,group_j+1);
     }
     let pt=[x,y];
@@ -126,13 +127,13 @@ function init(){
     canvas.height = window.innerHeight;
     canvas.addEventListener('mousedown', function(e) {
         let [x,y]=getCursorPosition(canvas, e);
-        let [i,j]=getHexIndex(x,y);
-        clearContext();
+        // let [i,j]=getHexIndex(x,y);
+        // clearContext();
         drawHexagonGrid();
-        drawRoundCharacter(i,j);
+        // drawRoundCharacter(i,j);
     })
     ctx = canvas.getContext("2d");
     window.addEventListener('resize',resizeCanvas,false);
     drawHexagonGrid();
-    drawRoundCharacter();
+    // drawRoundCharacter();
 }
