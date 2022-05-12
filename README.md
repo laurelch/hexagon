@@ -34,6 +34,7 @@ A few kinds of attack is available for player to choose. Different attack may ha
 
 ### Implementations
 * [Stage.js | 2D HTML5 rendering and layout engine](https://github.com/shakiba/stage.js)
+* [GitHub | eperezcosano/hexagonal-grid: How to draw a hexagonal grid on HTML Canvas](https://github.com/eperezcosano/hexagonal-grid)
 
 --- 
 
@@ -45,7 +46,7 @@ A few kinds of attack is available for player to choose. Different attack may ha
 ### Elements
 Lv. 1
 - [x] create hexagon grid
-- [ ] create basic shape for players and enemies
+- [x] create basic shape for players and enemies -> round shape
 - [ ] create basic shape for environment and obstacles
 
 Lv. 2
@@ -53,7 +54,7 @@ Lv. 2
 
 ### Gameplay
 Lv. 1
-- [ ] move player from one hexagon cell to another with mouse click
+- [x] move player from one hexagon cell to another with mouse click
 - [ ] show range of possible moves with color
 - [ ] show different types of moves
 - [ ] constrain player move within the range
