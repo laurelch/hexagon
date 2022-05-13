@@ -21,7 +21,7 @@ Stage({
         }),
         "o": Stage.canvas(function(ctx) {
             ctx.beginPath();
-            ctx.arc(W*0.5,W*0.5,W*0.25,0,2*Math.PI);
+            ctx.arc(0.5*W,0.5*W,0.3*W,0,2*Math.PI);
             ctx.fillStyle = `rgb(218, 247, 166)`;
             ctx.fill();
             ctx.lineWidth = 0.5;

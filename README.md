@@ -11,6 +11,7 @@
     - [Elements](#elements)
     - [Gameplay](#gameplay-1)
     - [UI](#ui)
+    - [Bugs](#bugs)
 
 ## Goal
 Implement a game involving one or more players, where they move, collaborate, and fight enemies in a hexagonal grid. 
@@ -55,6 +56,7 @@ Lv. 2
 ### Gameplay
 Lv. 1
 - [x] move player from one hexagon cell to another with mouse click
+- [x] move player with animation
 - [ ] show range of possible moves with color
 - [ ] show different types of moves
 - [ ] constrain player move within the range
@@ -69,3 +71,7 @@ Lv. 1
 
 Lv. 2
 - [ ] add progress bar to attack
+
+### Bugs
+Lv. 1
+- [ ] manhattan distance does not reflect third coordinate
