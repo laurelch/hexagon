@@ -24,6 +24,7 @@ function Game(ui, width, height){
     let grid = [];
     let player;
     // let gridMap = {};
+    let coloredGrid = [];
 
     this.start = function(){
         for(let i = 0; i < width; i ++){
@@ -32,6 +33,9 @@ function Game(ui, width, height){
             }
         }
         new Character(PLAYER).insert();
+        for(let i = 0; i < 20; i ++){
+            new ColoredHexagon();
+        }
     }
 
     function Hexagon(i,j){
@@ -40,13 +44,27 @@ function Game(ui, width, height){
         this.ui = ui.hex(this);
         this.click = function(){
             console.log("hexagon clicked - ", this.i, "-", this.j);
+            // color the player original cell
+            let colorHex = coloredGrid[0];
+            colorHex.move(player.position[0], player.position[1]);
+            colorHex.ui.add();
+            // move player to the clicked hexagon
             let route = player.route(this.i, this.j);
             console.log(route);
             for(let r = 0; r < route.length; r++){
+                // color all cells in the route
+                colorHex = coloredGrid[r + 1];
+                colorHex.move(route[r][0],route[r][1]);
+                colorHex.ui.add();
+                // move player to cells in the route one by one
                 setTimeout(()=>{
                     player.move(route[r][0], route[r][1]);
                 }, r*500)
             }
+            // clear all colored cells after arrival
+            setTimeout(()=>{
+                clearColoredGrid();
+            }, route.length*500)
         }
     }
 
@@ -56,6 +74,12 @@ function Game(ui, width, height){
         this.ui.add();
     }
 
+    /**
+     * Returns neighbors of one hexagon cell
+     * @param {number} i 
+     * @param {number} j 
+     * @returns array of neighbors [i,j]
+     */
     function neighbors(i, j){
         let neighbors = [];
         // top-left, top, top-right, bottom-left, bottom, bottom-right
@@ -109,6 +133,25 @@ function Game(ui, width, height){
         player = this;
         this.ui.add();
     }
+
+    function ColoredHexagon(color = "red"){
+        this.i = 0;
+        this.j = 0;
+        this.move = function(i, j){
+            this.i = i;
+            this.j = j;
+        }
+        if(color == "red"){
+            this.ui = ui.hex_red(this);
+        }
+        coloredGrid.push(this);
+    }
+
+    function clearColoredGrid(){
+        for(let i = 0; i < coloredGrid.length; i++){
+            coloredGrid[i].ui.remove();
+        }
+    }
 }
 
 Stage(function(stage){
@@ -124,7 +167,7 @@ Stage(function(stage){
 
     let game = new Game({
         hex: function(hex){
-            let img = Stage.image("hex").pin({
+            let img = Stage.image("hex-bg").pin({
                 align: 0
             }).on(Mouse.CLICK, function(point){
                 hex.click();
@@ -140,7 +183,7 @@ Stage(function(stage){
         },
         circle: function(circle){
             let img = Stage.image("o").pin({
-                align:0
+                align: 0
             });
             return {
                 add: function(){
@@ -152,7 +195,21 @@ Stage(function(stage){
                     console.log("move circle");
                     let [x, y] = getPos(circle.position[0], circle.position[1]);
                     img.appendTo(board).offset(x, y);
-                    console.log("Delayed for 100 millisecond.");
+                }
+            }
+        },
+        hex_red: function(hex){
+            let img = Stage.image("hex-red").pin({
+                align: 0
+            })
+            return {
+                add: function(){
+                    console.log("add color hex");
+                    let [x, y] = getPos(hex.i, hex.j);
+                    img.appendTo(board).offset(x, y);
+                },
+                remove: function(){
+                    board.remove(img);
                 }
             }
         }
