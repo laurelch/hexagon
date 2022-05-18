@@ -15,10 +15,23 @@ function getPos(i, j){
     return [x,y];
 }
 
-function manhattanDist(x1, y1, x2, y2){
-    return Math.abs(x1-x2)+Math.abs(y1-y2);
+/**
+ * Convert cell [x,y] to grid [x_g, y_g] for distance calculation,
+ * cell [0, 0] -> grid [0, 0]
+ * cell [1, 0] -> grid [2, 1]
+ * @param {*} x 
+ * @param {*} y 
+ */
+function cellToGrid(x, y){
+    if(x%2 === 0) return [x*2, y*2];
+    else return [x*2, y*2+1];
 }
 
+function manhattanDist(x1, y1, x2, y2){
+    let p1 = cellToGrid(x1, y1);
+    let p2 = cellToGrid(x2, y2);
+    return (Math.abs(p1[0]-p2[0])+Math.abs(p1[1]-p2[1]))/2;
+}
 
 function Game(ui, width, height){
     let grid = [];
@@ -44,27 +57,8 @@ function Game(ui, width, height){
         this.ui = ui.hex(this);
         this.click = function(){
             console.log("hexagon clicked - ", this.i, "-", this.j);
-            // color the player original cell
-            let colorHex = coloredGrid[0];
-            colorHex.move(player.position[0], player.position[1]);
-            colorHex.ui.add();
-            // move player to the clicked hexagon
-            let route = player.route(this.i, this.j);
-            console.log(route);
-            for(let r = 0; r < route.length; r++){
-                // color all cells in the route
-                colorHex = coloredGrid[r + 1];
-                colorHex.move(route[r][0],route[r][1]);
-                colorHex.ui.add();
-                // move player to cells in the route one by one
-                setTimeout(()=>{
-                    player.move(route[r][0], route[r][1]);
-                }, r*500)
-            }
-            // clear all colored cells after arrival
-            setTimeout(()=>{
-                clearColoredGrid();
-            }, route.length*500)
+            playerMove(this.i, this.j);
+            findCellsWithDist(this.i, this.j, 1, 1);
         }
     }
 
@@ -72,6 +66,35 @@ function Game(ui, width, height){
         // setHexagon(i, j, this);
         grid.push(this);
         this.ui.add();
+    }
+
+    /**
+     * Move player from original to goal with cells colored
+     * @param {number} i 
+     * @param {number} j 
+     */
+    function playerMove(i, j){
+        // color the player original cell
+        let colorHex = coloredGrid[0];
+        colorHex.move(player.position[0], player.position[1]);
+        colorHex.ui.add();
+        // move player to the clicked hexagon
+        let route = player.route(i, j);
+        console.log(route);
+        for(let r = 0; r < route.length; r++){
+            // color all cells in the route
+            colorHex = coloredGrid[r + 1];
+            colorHex.move(route[r][0],route[r][1]);
+            colorHex.ui.add();
+            // move player to cells in the route one by one
+            setTimeout(()=>{
+                player.move(route[r][0], route[r][1]);
+            }, r*500)
+        }
+        // clear all colored cells after arrival
+        setTimeout(()=>{
+            clearColoredGrid();
+        }, route.length*500)
     }
 
     /**
@@ -117,6 +140,7 @@ function Game(ui, width, height){
                 for(let n = 0; n < ns.length; n++){
                     dists.push(manhattanDist(ns[n][0],ns[n][1],i,j));
                 }
+                console.log("dists - ",dists);
                 let next_i = dists.indexOf(Math.min(...dists));
                 let next = ns[next_i];
                 route.push(next);
@@ -124,7 +148,7 @@ function Game(ui, width, height){
                 cj = next[1];
                 dist = manhattanDist(ci,cj,i,j);
             }
-            console.log(route);
+            // console.log(route);
             return route;
         }
     }
@@ -141,9 +165,10 @@ function Game(ui, width, height){
             this.i = i;
             this.j = j;
         }
-        if(color == "red"){
-            this.ui = ui.hex_red(this);
+        this.changeColor = function(color){
+            this.ui = ui.hex_color(this, color);
         }
+        this.changeColor(color);
         coloredGrid.push(this);
     }
 
@@ -151,6 +176,36 @@ function Game(ui, width, height){
         for(let i = 0; i < coloredGrid.length; i++){
             coloredGrid[i].ui.remove();
         }
+    }
+
+    /**
+     * Find cells within the range of distance (near to far)
+     * @param {*} i 
+     * @param {*} j 
+     * @param {*} near 
+     * @param {*} far 
+     * @returns
+     */
+    function findCellsWithDist(i, j, near, far){
+        let d = near;
+        let cells = []; // neighbors near to far
+        cells.push([i,j]);
+        let dist_index = [];
+        dist_index.push(0);
+        while(d <= far){
+            dist_index.push(cells.length);
+            let current = neighbors(i, j);
+            for(let c = 0; c < current.length; c++){
+                let cur = current[c];
+                if(!cells.includes(cur)) cells.push(cur);
+            }
+            d++;
+        }
+        // console.log("findCellsWithDist - ",cells,dist_index);
+        return {
+            cells:cells,
+            dist:dist_index
+        };
     }
 }
 
@@ -187,19 +242,20 @@ Stage(function(stage){
             });
             return {
                 add: function(){
-                    console.log("add circle");
+                    // console.log("add circle");
                     let [x, y] = getPos(circle.position[0], circle.position[1]);
                     img.appendTo(board).offset(x, y);
                 },
                 move: function(){
-                    console.log("move circle");
+                    // console.log("move circle");
                     let [x, y] = getPos(circle.position[0], circle.position[1]);
                     img.appendTo(board).offset(x, y);
                 }
             }
         },
-        hex_red: function(hex){
-            let img = Stage.image("hex-red").pin({
+        hex_color: function(hex, color){
+            let img_name = "hex-"+color; // red, yellow, green, blue
+            let img = Stage.image(img_name).pin({
                 align: 0
             })
             return {

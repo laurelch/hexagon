@@ -22,6 +22,24 @@ Stage({
             ctx.scale(4, 4);
             drawHex(ctx, width, height, "#eaa");
         }),
+        "hex-yellow": Stage.canvas(function(ctx) {
+            let width = W, height = width;
+            this.size(width, height, 4);
+            ctx.scale(4, 4);
+            drawHex(ctx, width, height, "#eea");
+        }),
+        "hex-green": Stage.canvas(function(ctx) {
+            let width = W, height = width;
+            this.size(width, height, 4);
+            ctx.scale(4, 4);
+            drawHex(ctx, width, height, "#aea");
+        }),
+        "hex-blue": Stage.canvas(function(ctx) {
+            let width = W, height = width;
+            this.size(width, height, 4);
+            ctx.scale(4, 4);
+            drawHex(ctx, width, height, "#aee");
+        }),
     }
 });
 
