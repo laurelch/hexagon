@@ -34,10 +34,13 @@ function manhattanDist(x1, y1, x2, y2){
 }
 
 function Game(ui, width, height){
+    this.world = planck.World();
     let grid = [];
     let player;
-    // let gridMap = {};
-    let coloredGrid = [];
+    let coloredCells = {
+        route: [],
+        attack: []
+    };
 
     this.start = function(){
         for(let i = 0; i < width; i ++){
@@ -46,8 +49,31 @@ function Game(ui, width, height){
             }
         }
         new Character(PLAYER).insert();
-        for(let i = 0; i < 20; i ++){
-            new ColoredHexagon();
+    }
+
+    // let globalTime = 0;
+    // this.tick = function(dt){
+    //     globalTime += dt;
+    // }
+
+    this.handleKeys = function(){
+        if(ui.active_keys.ArrowLeft || ui.active_keys.a){
+            console.log("Key pressed: <- or A");
+        }
+        if(ui.active_keys.ArrowRight || ui.active_keys.d){
+            console.log("Key pressed: -> or D");
+        }
+        if(ui.active_keys.ArrowUp || ui.active_keys.w){
+            console.log("Key pressed: Up or W");
+        }
+        if(ui.active_keys.ArrowDown || ui.active_keys.s){
+            console.log("Key pressed: Down or S");
+        }
+        if(ui.active_keys.Tab){
+            console.log("Key pressed: tab");
+        }
+        if(ui.active_keys){
+
         }
     }
 
@@ -56,7 +82,7 @@ function Game(ui, width, height){
         this.j = j;
         this.ui = ui.hex(this);
         this.click = function(){
-            console.log("hexagon clicked - ", this.i, "-", this.j);
+            // console.log("hexagon clicked - ", this.i, "-", this.j);
             playerMove(this.i, this.j);
             findCellsWithDist(this.i, this.j, 1, 1);
         }
@@ -74,16 +100,14 @@ function Game(ui, width, height){
      * @param {number} j 
      */
     function playerMove(i, j){
-        // color the player original cell
-        let colorHex = coloredGrid[0];
-        colorHex.move(player.position[0], player.position[1]);
-        colorHex.ui.add();
         // move player to the clicked hexagon
         let route = player.route(i, j);
-        console.log(route);
+        // console.log(route);
         for(let r = 0; r < route.length; r++){
-            // color all cells in the route
-            colorHex = coloredGrid[r + 1];
+            // color cells in the route
+            let hex = new ColoredHexagon();
+            coloredCells.route.push(hex);
+            colorHex = coloredCells.route[r];
             colorHex.move(route[r][0],route[r][1]);
             colorHex.ui.add();
             // move player to cells in the route one by one
@@ -93,7 +117,7 @@ function Game(ui, width, height){
         }
         // clear all colored cells after arrival
         setTimeout(()=>{
-            clearColoredGrid();
+            clearColoredCells("route");
         }, route.length*500)
     }
 
@@ -133,6 +157,7 @@ function Game(ui, width, height){
             let route = [];
             let ci = this.position[0];
             let cj = this.position[1];
+            route.push([ci,cj]);
             let dist = manhattanDist(ci,cj,i,j);
             while(dist > 0){
                 let dists = [];
@@ -140,7 +165,7 @@ function Game(ui, width, height){
                 for(let n = 0; n < ns.length; n++){
                     dists.push(manhattanDist(ns[n][0],ns[n][1],i,j));
                 }
-                console.log("dists - ",dists);
+                // console.log("dists - ",dists);
                 let next_i = dists.indexOf(Math.min(...dists));
                 let next = ns[next_i];
                 route.push(next);
@@ -169,12 +194,15 @@ function Game(ui, width, height){
             this.ui = ui.hex_color(this, color);
         }
         this.changeColor(color);
-        coloredGrid.push(this);
+        // coloredCells.route.push(this);
     }
 
-    function clearColoredGrid(){
-        for(let i = 0; i < coloredGrid.length; i++){
-            coloredGrid[i].ui.remove();
+    function clearColoredCells(type="route"){
+        if(type === "route"){
+            for(let i = 0; i < coloredCells.route.length; i++){
+                coloredCells.route[i].ui.remove();
+            }
+            coloredCells.route=[];
         }
     }
 
@@ -210,6 +238,20 @@ function Game(ui, width, height){
 }
 
 Stage(function(stage){
+    let active_keys = {};
+    let KEY_NAMES = {
+        "Space": false,
+        "Tab": false,
+        "ArrowUp": false,
+        "ArrowLeft": false,
+        "ArrowRight": false,
+        "ArrowDown": false,
+        "w": false,
+        "a": false,
+        "s": false,
+        "d": false
+    }
+
     stage.background('#eeeeee');
     stage.viewbox(500, 500);
     let width = 22, height = 9;
@@ -221,6 +263,7 @@ Stage(function(stage){
     });
 
     let game = new Game({
+        active_keys: active_keys,
         hex: function(hex){
             let img = Stage.image("hex-bg").pin({
                 align: 0
@@ -270,6 +313,53 @@ Stage(function(stage){
             }
         }
     }, width, height);
+
+    let world, meta;
+
+    stage.on('viewport', function(size) {
+        meta.pin({
+          scaleMode : 'in-pad',
+          scaleWidth : size.width,
+          scaleHeight : size.height
+        });
+        world.pin({
+          scaleMode : 'in-pad',
+          scaleWidth : size.width,
+          scaleHeight : size.height
+        });
+      });
+
+    world = new Stage
+        .planck(game.world, { ratio: 80 })
+        .pin({
+            handle : -0.5,
+            width : width,
+            height : height
+        })
+        .appendTo(stage);
+
+    // stage.tick(game.tick);
+
+    meta = Stage
+        .create()
+        .pin({ width : 1000, height : 1000 })
+        .appendTo(stage);
+
+    document.onkeydown = function(evt){
+        evt.preventDefault();
+        if(KEY_NAMES.hasOwnProperty(evt.key)){
+            let key = evt.key;
+            if(key === " ") key = "Space";
+            active_keys[evt.key] = true;
+            game.handleKeys();
+        }
+    }
+
+    document.onkeyup = function(evt){
+        let key = evt.key;
+        if(key === " ") key = "Space"
+        active_keys[key] = false;
+    }
 
     game.start();
 });
