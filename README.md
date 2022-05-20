@@ -57,8 +57,9 @@ Lv. 2
 Lv. 1
 - [x] move player from one hexagon cell to another with mouse click
 - [x] move player with animation
-- [ ] show range of possible moves with color
+- [x] show range of possible moves with color
 - [ ] show different types of moves
+  - [x] the range is 360°
 - [ ] constrain player move within the range
 
 Lv. 2
@@ -74,4 +75,5 @@ Lv. 2
 
 ### Bugs
 Lv. 1
-- [ ] manhattan distance does not reflect third coordinate
+- [x] manhattan distance does not reflect third coordinate
+- [ ] while player is moving, the user can still click to interfere the move

@@ -39,7 +39,7 @@ Stage({
             this.size(width, height, 4);
             ctx.scale(4, 4);
             drawHex(ctx, width, height, "#aee");
-        }),
+        })
     }
 });
 

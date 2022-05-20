@@ -41,6 +41,9 @@ function Game(ui, width, height){
         route: [],
         attack: []
     };
+    let attackType = 0;
+    let totalAttack = 5;
+    let attackActive = false;
 
     this.start = function(){
         for(let i = 0; i < width; i ++){
@@ -57,6 +60,8 @@ function Game(ui, width, height){
     // }
 
     this.handleKeys = function(){
+        let i = player.position[0];
+        let j = player.position[1];
         if(ui.active_keys.ArrowLeft || ui.active_keys.a){
             console.log("Key pressed: <- or A");
         }
@@ -70,10 +75,23 @@ function Game(ui, width, height){
             console.log("Key pressed: Down or S");
         }
         if(ui.active_keys.Tab){
-            console.log("Key pressed: tab");
+            console.log("Key pressed: Tab");
+            if(attackActive){
+                toggleAttackRange("order", i, j);
+            }
         }
-        if(ui.active_keys){
-
+        if(ui.active_keys.q){
+            console.log("Key pressed: Q");
+            attackActive = !attackActive;
+            if(attackActive){
+                attackType = 0;
+                toggleAttackRange("order", i, j);
+            }else{
+                clearColoredCells("attack");
+            }
+        }
+        if(ui.active_keys.Space){
+            console.log("Key pressed: Space");
         }
     }
 
@@ -84,7 +102,6 @@ function Game(ui, width, height){
         this.click = function(){
             // console.log("hexagon clicked - ", this.i, "-", this.j);
             playerMove(this.i, this.j);
-            findCellsWithDist(this.i, this.j, 1, 1);
         }
     }
 
@@ -203,7 +220,18 @@ function Game(ui, width, height){
                 coloredCells.route[i].ui.remove();
             }
             coloredCells.route=[];
+        }else if(type === "attack"){
+            for(let i = 0; i < coloredCells.attack.length; i++){
+                coloredCells.attack[i].ui.remove();
+            }
         }
+    }
+
+    function includeCell(list, cell){
+        for(let i = 0; i < list.length; i++){
+            if(list[i][0] === cell[0] && list[i][1] === cell[1]) return true;
+        }
+        return false;
     }
 
     /**
@@ -215,25 +243,58 @@ function Game(ui, width, height){
      * @returns
      */
     function findCellsWithDist(i, j, near, far){
-        let d = near;
-        let cells = []; // neighbors near to far
-        cells.push([i,j]);
-        let dist_index = [];
-        dist_index.push(0);
-        while(d <= far){
-            dist_index.push(cells.length);
-            let current = neighbors(i, j);
-            for(let c = 0; c < current.length; c++){
-                let cur = current[c];
-                if(!cells.includes(cur)) cells.push(cur);
+        let cells = [];
+        let dist = [];
+        let depth = 1;
+        cells.push([i, j]);
+        dist.push(0);
+        findCells(i, j, cells, dist, far, depth);
+        console.log(cells, dist);
+        for(let d = 0; d < dist.length; d++){
+            if(dist[d] < near){
+                dist.splice(d, 1);
+                cells.splice(d, 1);
             }
-            d++;
         }
-        // console.log("findCellsWithDist - ",cells,dist_index);
         return {
-            cells:cells,
-            dist:dist_index
-        };
+            cells: cells,
+            dist: dist
+        }
+    }
+
+    function findCells(i, j, cells, dist, far, depth){
+        if(depth > far) return {cells: cells, dist: dist};
+        let ns = neighbors(i, j);
+        for(let ni = 0; ni < ns.length; ni++){
+            let n = ns[ni];
+            if(!includeCell(cells, n)) {
+                cells.push(n);
+                dist.push(depth);
+            }
+            findCells(n[0], n[1], cells, dist, far, depth + 1);
+        }
+    }
+
+    // select attack type with "order", "random", or other specification
+    function toggleAttackRange(select = "order", i, j){
+        if(select === "order")
+            attackType = attackType % totalAttack;
+        else if(select === "random")
+            attackType = Math.floor(Math.random() * totalAttack);
+        console.log("toggleAttackRange - attackType =", attackType);
+        let range = findCellsWithDist(i, j, 1, attackType+1);
+        clearColoredCells("attack");
+        console.log("toggleAttackRange -",range.cells);
+        // color cells in the range
+        for(let i = 0; i < range.cells.length; i++){
+            let hex = new ColoredHexagon("blue");
+            coloredCells.attack.push(hex);
+            let cell = range.cells[i];
+            colorHex = coloredCells.attack[i];
+            colorHex.move(cell[0],cell[1]);
+            colorHex.ui.add(); 
+        }
+        attackType++;
     }
 }
 
@@ -249,7 +310,8 @@ Stage(function(stage){
         "w": false,
         "a": false,
         "s": false,
-        "d": false
+        "d": false,
+        "q": false
     }
 
     stage.background('#eeeeee');
@@ -346,8 +408,8 @@ Stage(function(stage){
         .appendTo(stage);
 
     document.onkeydown = function(evt){
-        evt.preventDefault();
         if(KEY_NAMES.hasOwnProperty(evt.key)){
+            evt.preventDefault();
             let key = evt.key;
             if(key === " ") key = "Space";
             active_keys[evt.key] = true;
