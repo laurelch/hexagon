@@ -12,6 +12,7 @@
     - [Gameplay](#gameplay-1)
     - [UI](#ui)
     - [Bugs](#bugs)
+    - [Utilities](#utilities)
 
 ## Goal
 Implement a game involving one or more players, where they move, collaborate, and fight enemies in a hexagonal grid. 
@@ -40,10 +41,12 @@ A few kinds of attack is available for player to choose. Different attack may ha
 --- 
 
 ## Timeline & To-do List
+
 ### Versions
 * Lv. 1 - A player can move from one hexagon cell to another within a defined range
   * start: 5/9/22
 * Lv. 2 - A player can move and attack enemies while moving in the hexagon grid
+
 ### Elements
 Lv. 1
 - [x] create hexagon grid
@@ -55,25 +58,36 @@ Lv. 2
 
 ### Gameplay
 Lv. 1
-- [x] move player from one hexagon cell to another with mouse click
-- [x] move player with animation
-- [x] show range of possible moves with color
-- [ ] show different types of moves
-  - [x] the range is 360°
-- [ ] constrain player move within the range
+- [x] Move player from one hexagon cell to another with mouse click.
+- [x] Move player with animation.
+- [x] Show range of possible moves with color.
+- [x] Constrain player move within the range.
+- [x] Show different types of move/attack - Part 1.
+  - [x] 1. Move between contiguous cells, with move range of 360°, distance toggled by key.
+- [ ] Add enemies that appear randomly in the view and will disappear if player moves to that cell.
 
 Lv. 2
-- [ ] add enemies that appear randomly in the view
-- [ ] let player attack the enemies and let them disappear if they die
+- [ ] Add direction of player.
+- [ ] Show different types of move/attack - Part 2.
+  - [ ] 2. Attack fan-shaped area with specified degree.
+  - [ ] 3. Attack distant cells with specified rules.
+- [ ] Allow player to attack the enemies within attack range by mouse click.
+
+Lv. 3
+- [ ] Add smooth animation.
 
 ### UI
 Lv. 1
-- [ ] add styled intructions
+- [ ] Add styled intructions.
 
 Lv. 2
-- [ ] add progress bar to attack
+- [ ] Add HP bar.
+- [ ] Add skill information.
 
 ### Bugs
 Lv. 1
-- [x] manhattan distance does not reflect third coordinate
-- [ ] while player is moving, the user can still click to interfere the move
+- [x] Distance does not reflect third coordinate.
+- [x] While player is moving, the user can still click to interfere the move.
+
+### Utilities
+* Add bach script to convert MOV to GIF.

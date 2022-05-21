@@ -37,13 +37,16 @@ function Game(ui, width, height){
     this.world = planck.World();
     let grid = [];
     let player;
+
+    let attackType = 0;
+    let totalAttack = 5;
+    let attackActive = false; // toggle with Q
+    let acceptClick = true;
+    let attackRange = [];
     let coloredCells = {
         route: [],
         attack: []
     };
-    let attackType = 0;
-    let totalAttack = 5;
-    let attackActive = false;
 
     this.start = function(){
         for(let i = 0; i < width; i ++){
@@ -52,6 +55,7 @@ function Game(ui, width, height){
             }
         }
         new Character(PLAYER).insert();
+        acceptClick = true;
     }
 
     // let globalTime = 0;
@@ -77,7 +81,7 @@ function Game(ui, width, height){
         if(ui.active_keys.Tab){
             console.log("Key pressed: Tab");
             if(attackActive){
-                toggleAttackRange("order", i, j);
+                getAttackRange("order", i, j);
             }
         }
         if(ui.active_keys.q){
@@ -85,7 +89,7 @@ function Game(ui, width, height){
             attackActive = !attackActive;
             if(attackActive){
                 attackType = 0;
-                toggleAttackRange("order", i, j);
+                getAttackRange("order", i, j);
             }else{
                 clearColoredCells("attack");
             }
@@ -100,8 +104,14 @@ function Game(ui, width, height){
         this.j = j;
         this.ui = ui.hex(this);
         this.click = function(){
-            // console.log("hexagon clicked - ", this.i, "-", this.j);
-            playerMove(this.i, this.j);
+            console.log("Hexagon - click", acceptClick, player.canMove(this.i,this.j));
+            if(acceptClick && !player.canMove(this.i, this.j)){
+                return;
+            } else if (acceptClick && player.canMove(this.i, this.j)){
+                clearColoredCells("attack");
+                attackActive = false;
+                playerMove(this.i, this.j);
+            }
         }
     }
 
@@ -119,7 +129,7 @@ function Game(ui, width, height){
     function playerMove(i, j){
         // move player to the clicked hexagon
         let route = player.route(i, j);
-        // console.log(route);
+        acceptClick = false;
         for(let r = 0; r < route.length; r++){
             // color cells in the route
             let hex = new ColoredHexagon();
@@ -130,12 +140,13 @@ function Game(ui, width, height){
             // move player to cells in the route one by one
             setTimeout(()=>{
                 player.move(route[r][0], route[r][1]);
-            }, r*500)
+            }, r * 500)
         }
         // clear all colored cells after arrival
         setTimeout(()=>{
             clearColoredCells("route");
-        }, route.length*500)
+            acceptClick = true;
+        }, route.length * 500)
     }
 
     /**
@@ -147,15 +158,16 @@ function Game(ui, width, height){
     function neighbors(i, j){
         let neighbors = [];
         // top-left, top, top-right, bottom-left, bottom, bottom-right
-        let i_list = [-1,0,1,-1,0,1];
+        let i_list = [-1, 0, 1, -1, 0, 1];
         let j_list = [];
-        i % 2 == 0 ? j_list = [-1,-1,-1,0,1,0] : j_list = [0,-1,0,1,1,1];
+        i % 2 == 0 ? j_list = [-1, -1, -1, 0, 1, 0]:
+                     j_list = [0, -1, 0, 1, 1, 1];
         for(let n = 0; n < 6; n++){
             let new_i = i + i_list[n];
             if(new_i < 0) continue;
             let new_j = j + j_list[n];
             if(new_j < 0) continue;
-            neighbors.push([new_i,new_j]);
+            neighbors.push([new_i, new_j]);
         }
         return neighbors;
     }
@@ -174,13 +186,13 @@ function Game(ui, width, height){
             let route = [];
             let ci = this.position[0];
             let cj = this.position[1];
-            route.push([ci,cj]);
-            let dist = manhattanDist(ci,cj,i,j);
+            route.push([ci, cj]);
+            let dist = manhattanDist(ci, cj, i, j);
             while(dist > 0){
                 let dists = [];
                 let ns = neighbors(ci, cj);
                 for(let n = 0; n < ns.length; n++){
-                    dists.push(manhattanDist(ns[n][0],ns[n][1],i,j));
+                    dists.push(manhattanDist(ns[n][0], ns[n][1], i, j));
                 }
                 // console.log("dists - ",dists);
                 let next_i = dists.indexOf(Math.min(...dists));
@@ -188,10 +200,15 @@ function Game(ui, width, height){
                 route.push(next);
                 ci = next[0];
                 cj = next[1];
-                dist = manhattanDist(ci,cj,i,j);
+                dist = manhattanDist(ci, cj, i, j);
             }
             // console.log(route);
             return route;
+        }
+        // if the target cell is in current attack range
+        this.canMove = function(i, j){
+            if(includeCell(attackRange, [i, j])) return true;
+            return false;
         }
     }
 
@@ -219,14 +236,22 @@ function Game(ui, width, height){
             for(let i = 0; i < coloredCells.route.length; i++){
                 coloredCells.route[i].ui.remove();
             }
-            coloredCells.route=[];
+            coloredCells.route = [];
         }else if(type === "attack"){
             for(let i = 0; i < coloredCells.attack.length; i++){
                 coloredCells.attack[i].ui.remove();
             }
+            coloredCells.attack = [];
+            attackRange = [];
         }
     }
 
+    /**
+     * Check if a cell [i, j] is in a list of cells
+     * @param {*} list 
+     * @param {*} cell 
+     * @returns 
+     */
     function includeCell(list, cell){
         for(let i = 0; i < list.length; i++){
             if(list[i][0] === cell[0] && list[i][1] === cell[1]) return true;
@@ -236,10 +261,10 @@ function Game(ui, width, height){
 
     /**
      * Find cells within the range of distance (near to far)
-     * @param {*} i 
-     * @param {*} j 
-     * @param {*} near 
-     * @param {*} far 
+     * @param {Number} i 
+     * @param {Number} j 
+     * @param {Number} near 
+     * @param {Number} far 
      * @returns
      */
     function findCellsWithDist(i, j, near, far){
@@ -276,17 +301,18 @@ function Game(ui, width, height){
     }
 
     // select attack type with "order", "random", or other specification
-    function toggleAttackRange(select = "order", i, j){
+    function getAttackRange(select = "order", i, j){
         if(select === "order")
             attackType = attackType % totalAttack;
         else if(select === "random")
             attackType = Math.floor(Math.random() * totalAttack);
-        console.log("toggleAttackRange - attackType =", attackType);
+        console.log("getAttackRange - attackType =", attackType);
         let range = findCellsWithDist(i, j, 1, attackType+1);
         clearColoredCells("attack");
-        console.log("toggleAttackRange -",range.cells);
+        console.log("getAttackRange -",range.cells);
+        attackRange = range.cells;
         // color cells in the range
-        for(let i = 0; i < range.cells.length; i++){
+        for(let i = 0; i < attackRange.length; i++){
             let hex = new ColoredHexagon("blue");
             coloredCells.attack.push(hex);
             let cell = range.cells[i];
