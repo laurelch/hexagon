@@ -110,7 +110,7 @@ function Game(ui, width, height){
             } else if (acceptClick && player.canMove(this.i, this.j)){
                 clearColoredCells("attack");
                 attackActive = false;
-                playerMove(this.i, this.j);
+                player.stepMove(this.i, this.j);
             }
         }
     }
@@ -119,34 +119,6 @@ function Game(ui, width, height){
         // setHexagon(i, j, this);
         grid.push(this);
         this.ui.add();
-    }
-
-    /**
-     * Move player from original to goal with cells colored
-     * @param {number} i 
-     * @param {number} j 
-     */
-    function playerMove(i, j){
-        // move player to the clicked hexagon
-        let route = player.route(i, j);
-        acceptClick = false;
-        for(let r = 0; r < route.length; r++){
-            // color cells in the route
-            let hex = new ColoredHexagon();
-            coloredCells.route.push(hex);
-            colorHex = coloredCells.route[r];
-            colorHex.move(route[r][0],route[r][1]);
-            colorHex.ui.add();
-            // move player to cells in the route one by one
-            setTimeout(()=>{
-                player.move(route[r][0], route[r][1]);
-            }, r * 500)
-        }
-        // clear all colored cells after arrival
-        setTimeout(()=>{
-            clearColoredCells("route");
-            acceptClick = true;
-        }, route.length * 500)
     }
 
     /**
@@ -175,7 +147,13 @@ function Game(ui, width, height){
     function Character(identity){
         this.identity = identity;
         this.position = [0, 0];
-        this.ui = ui.circle(this);
+        // this.ui = ui.circle(this);
+        this.ui = ui.arrow(this);
+
+        this.rotate = function(degree){
+            this.ui.rotate(degree);
+        }
+
         this.move = function(i, j){
             this.position[0] = i;
             this.position[1] = j;
@@ -210,10 +188,40 @@ function Game(ui, width, height){
             if(includeCell(attackRange, [i, j])) return true;
             return false;
         }
+
+        /**
+         * Move player from original to goal with cells colored
+         * @param {number} i 
+         * @param {number} j 
+         */
+        this.stepMove = function(i, j){
+            // move player to the clicked hexagon
+            let route = player.route(i, j);
+            acceptClick = false;
+            for(let r = 0; r < route.length; r++){
+                // color cells in the route
+                let hex = new ColoredHexagon();
+                coloredCells.route.push(hex);
+                colorHex = coloredCells.route[r];
+                colorHex.move(route[r][0],route[r][1]);
+                colorHex.ui.add();
+                // move player to cells in the route one by one
+                setTimeout(()=>{
+                    player.move(route[r][0], route[r][1]);
+                }, r * 500)
+            }
+            // clear all colored cells after arrival
+            setTimeout(()=>{
+                clearColoredCells("route");
+                acceptClick = true;
+            }, route.length * 500)
+        }
     }
 
     Character.prototype.insert = function(){
-        player = this;
+        if (this.identity == PLAYER) player = this;
+        // To-do: irregular shape is not rotated in center
+        // this.ui.rotate(-150);
         this.ui.add();
     }
 
@@ -397,6 +405,25 @@ Stage(function(stage){
                 },
                 remove: function(){
                     board.remove(img);
+                }
+            }
+        },
+        arrow: function(arrow){
+            let img = Stage.image(">").pin({
+                align: 0
+            });
+            return {
+                add: function(){
+                    let [x, y] = getPos(arrow.position[0], arrow.position[1]);
+                    img.appendTo(board).offset(x, y);
+                },
+                move: function(){
+                    let [x, y] = getPos(arrow.position[0], arrow.position[1]);
+                    img.appendTo(board).offset(x, y);
+                },
+                rotate: function(degree){
+                    let rad = degree * Math.PI / 180;
+                    img.rotate(rad);
                 }
             }
         }

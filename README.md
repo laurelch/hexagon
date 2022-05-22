@@ -89,5 +89,8 @@ Lv. 1
 - [x] Distance does not reflect third coordinate.
 - [x] While player is moving, the user can still click to interfere the move.
 
+Lv. 2
+- [ ] irregular shape is not rotated in center
+
 ### Utilities
 * Add bach script to convert MOV to GIF.
