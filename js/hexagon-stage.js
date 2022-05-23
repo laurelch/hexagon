@@ -2,6 +2,11 @@ let Mouse = Stage.Mouse;
 const SQRT3 = Math.sqrt(3);
 const W = 60; //width of whole hexagon
 const PLAYER = 1;
+const ROLES = {
+    player: 1,
+    enemy: 2,
+    companion: 3
+}
 
 function getPos(i, j){
     let x, y;
@@ -36,7 +41,9 @@ function manhattanDist(x1, y1, x2, y2){
 function Game(ui, width, height){
     this.world = planck.World();
     let grid = [];
+    let hexMap = {};
     let player;
+    let enemies = [];
 
     let attackType = 0;
     let totalAttack = 5;
@@ -49,13 +56,40 @@ function Game(ui, width, height){
     };
 
     this.start = function(){
+        // 1. draw hexagon grid
         for(let i = 0; i < width; i ++){
             for(let j = 0; j < height; j++){
                 new Hexagon(i,j).insert(i,j);
+                hexMap[i+":"+j]=false;
             }
         }
-        new Character(PLAYER).insert();
+
+        // 2. draw player
+        let x = Math.floor(width/2)-1;
+        let y = Math.floor(height/2)-1;
+        // let [x, y] = this.getRandomCell();
+        new Character(ROLES.player).insert(x, y);
+
+        // 3. draw enemies
+        let [enemy_x, enemy_y] = this.getRandomCell();
+        new Character(ROLES.enemy).insert(enemy_x, enemy_y);
         acceptClick = true;
+    }
+
+    /**
+     * Get a random cell [x, y] that is not currently occupied
+     * @returns [x, y]
+     */
+    this.getRandomCell = function(){
+        let x = Math.floor(Math.random() * width);
+        let y = Math.floor(Math.random() * height);
+        let key = x + ":" + y;
+        while(hexMap[key]){
+            x = Math.floor(Math.random() * width);
+            y = Math.floor(Math.random() * height);
+            key = x + ":" + y;
+        }
+        return [x, y];
     }
 
     // let globalTime = 0;
@@ -119,6 +153,7 @@ function Game(ui, width, height){
         // setHexagon(i, j, this);
         grid.push(this);
         this.ui.add();
+        hexMap[i+":"+j]=true;
     }
 
     /**
@@ -147,18 +182,47 @@ function Game(ui, width, height){
     function Character(identity){
         this.identity = identity;
         this.position = [0, 0];
-        // this.ui = ui.circle(this);
-        this.ui = ui.arrow(this);
+        // this.ui = ui.arrow(this);
+        if(identity === ROLES.player){
+            this.ui = ui.circle(this);
+        }
+        else if(identity === ROLES.enemy){
+            this.ui = ui.circle(this,"red");
+        }
+
+        /**
+         * Insert the character shape to the hexagon map
+         * @param {*} i 
+         * @param {*} j 
+         */
+        this.insert = function(i=0, j=0){
+            if (this.identity == ROLES.player){
+                this.move(i, j);
+                player = this;
+            }
+            else if(this.identity == ROLES.enemy){
+                enemies.push(this);
+                this.move(i, j);
+            }
+            // To-do: irregular shape is not rotated in center
+            // this.ui.rotate(-150);
+            this.ui.add();
+        }
 
         this.rotate = function(degree){
             this.ui.rotate(degree);
         }
 
         this.move = function(i, j){
+            let prev_i = this.position[0];
+            let prev_j = this.position[1];
+            grid[prev_i+":"+prev_j] = false;
             this.position[0] = i;
             this.position[1] = j;
+            grid[i+":"+j] = true;
             this.ui.move();
         }
+
         // shortest route from current position to target (i, j)
         this.route = function(i, j){
             let route = [];
@@ -183,6 +247,7 @@ function Game(ui, width, height){
             // console.log(route);
             return route;
         }
+
         // if the target cell is in current attack range
         this.canMove = function(i, j){
             if(includeCell(attackRange, [i, j])) return true;
@@ -216,13 +281,6 @@ function Game(ui, width, height){
                 acceptClick = true;
             }, route.length * 500)
         }
-    }
-
-    Character.prototype.insert = function(){
-        if (this.identity == PLAYER) player = this;
-        // To-do: irregular shape is not rotated in center
-        // this.ui.rotate(-150);
-        this.ui.add();
     }
 
     function ColoredHexagon(color = "red"){
@@ -350,7 +408,7 @@ Stage(function(stage){
 
     stage.background('#eeeeee');
     stage.viewbox(500, 500);
-    let width = 22, height = 9;
+    let width = 20, height = 9;
 
     let board = Stage.create().appendTo(stage).pin({
         width: width,
@@ -375,8 +433,9 @@ Stage(function(stage){
                 }
             }
         },
-        circle: function(circle){
-            let img = Stage.image("o").pin({
+        circle: function(circle, color="green"){
+            let img_name = "o-"+color;
+            let img = Stage.image(img_name).pin({
                 align: 0
             });
             return {

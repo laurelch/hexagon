@@ -1,3 +1,4 @@
+// const W = 60;
 Stage({
     textures : {
         "hex-bg": Stage.canvas(function(ctx){
@@ -10,6 +11,26 @@ Stage({
             ctx.beginPath();
             ctx.arc(0.5*W,0.5*W,0.3*W,0,2*Math.PI);
             ctx.fillStyle = `rgb(218, 247, 166)`;
+            ctx.fill();
+            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = "darkslategray";
+            ctx.stroke();
+            ctx.closePath();
+        }),
+        "o-green": Stage.canvas(function(ctx){
+            ctx.beginPath();
+            ctx.arc(0.5*W,0.5*W,0.3*W,0,2*Math.PI);
+            ctx.fillStyle = `rgb(218, 247, 166)`;
+            ctx.fill();
+            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = "darkslategray";
+            ctx.stroke();
+            ctx.closePath();
+        }),
+        "o-red": Stage.canvas(function(ctx){
+            ctx.beginPath();
+            ctx.arc(0.5*W,0.5*W,0.3*W,0,2*Math.PI);
+            ctx.fillStyle = `#eaa`;
             ctx.fill();
             ctx.lineWidth = 0.5;
             ctx.strokeStyle = "darkslategray";
