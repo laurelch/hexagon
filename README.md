@@ -64,7 +64,7 @@ Lv. 1
 - [x] Constrain player move within the range.
 - [x] Show different types of move/attack - Part 1.
   - [x] 1. Move between contiguous cells, with move range of 360°, distance toggled by key.
-- [ ] Add enemies that appear randomly in the view and will disappear if player moves to that cell.
+- [x] Add enemies that appear randomly in the view and will disappear if player moves to that cell.
 
 Lv. 2
 - [ ] Add direction of player.
@@ -88,6 +88,7 @@ Lv. 2
 Lv. 1
 - [x] Distance does not reflect third coordinate.
 - [x] While player is moving, the user can still click to interfere the move.
+- [x] The colored hexagon cells are on top of existing enemy cells. Workaround: set alpha (transparency) = 0.2.
 
 Lv. 2
 - [ ] irregular shape is not rotated in center

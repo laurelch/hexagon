@@ -3,9 +3,9 @@ const SQRT3 = Math.sqrt(3);
 const W = 60; //width of whole hexagon
 const PLAYER = 1;
 const ROLES = {
-    player: 1,
-    enemy: 2,
-    companion: 3
+    player: 3,
+    enemy: 1,
+    companion: 2
 }
 
 function getPos(i, j){
@@ -55,19 +55,23 @@ function Game(ui, width, height){
         attack: []
     };
 
+    // let globalTime = 0;
+    // this.tick = function(dt){
+    //     globalTime += dt;
+    // }
+
     this.start = function(){
         // 1. draw hexagon grid
         for(let i = 0; i < width; i ++){
             for(let j = 0; j < height; j++){
                 new Hexagon(i,j).insert(i,j);
-                hexMap[i+":"+j]=false;
+                hexMap[i+":"+j] = 0;
             }
         }
 
         // 2. draw player
         let x = Math.floor(width/2)-1;
         let y = Math.floor(height/2)-1;
-        // let [x, y] = this.getRandomCell();
         new Character(ROLES.player).insert(x, y);
 
         // 3. draw enemies
@@ -84,7 +88,7 @@ function Game(ui, width, height){
         let x = Math.floor(Math.random() * width);
         let y = Math.floor(Math.random() * height);
         let key = x + ":" + y;
-        while(hexMap[key]){
+        while(hexMap[key] > 0){
             x = Math.floor(Math.random() * width);
             y = Math.floor(Math.random() * height);
             key = x + ":" + y;
@@ -92,10 +96,6 @@ function Game(ui, width, height){
         return [x, y];
     }
 
-    // let globalTime = 0;
-    // this.tick = function(dt){
-    //     globalTime += dt;
-    // }
 
     this.handleKeys = function(){
         let i = player.position[0];
@@ -153,7 +153,7 @@ function Game(ui, width, height){
         // setHexagon(i, j, this);
         grid.push(this);
         this.ui.add();
-        hexMap[i+":"+j]=true;
+        hexMap[i+":"+j] = this.identity;
     }
 
     /**
@@ -191,7 +191,7 @@ function Game(ui, width, height){
         }
 
         /**
-         * Insert the character shape to the hexagon map
+         * Insert the character shape to the hexagon map.
          * @param {*} i 
          * @param {*} j 
          */
@@ -213,17 +213,33 @@ function Game(ui, width, height){
             this.ui.rotate(degree);
         }
 
+        function defeat(i, j){
+            for(let e = 0; e < enemies.length; e++){
+                if(enemies[e].position[0] === i && enemies[e].position[1] === j){
+                    enemies[e].ui.remove();
+                    break;
+                }
+            }
+        }
+
         this.move = function(i, j){
             let prev_i = this.position[0];
             let prev_j = this.position[1];
-            grid[prev_i+":"+prev_j] = false;
+            console.log("grid, identity",hexMap[i+":"+j],this.identity);
+            if(hexMap[i+":"+j] < this.identity) defeat(i, j);
+            hexMap[prev_i+":"+prev_j] = 0;
             this.position[0] = i;
             this.position[1] = j;
-            grid[i+":"+j] = true;
+            grid[i+":"+j] = this.identity;
             this.ui.move();
         }
 
-        // shortest route from current position to target (i, j)
+        /**
+         * Get shortest route from current position to target (i, j).
+         * @param {Number} i 
+         * @param {Number} j 
+         * @returns route from one cell to another
+         */
         this.route = function(i, j){
             let route = [];
             let ci = this.position[0];
@@ -234,7 +250,10 @@ function Game(ui, width, height){
                 let dists = [];
                 let ns = neighbors(ci, cj);
                 for(let n = 0; n < ns.length; n++){
-                    dists.push(manhattanDist(ns[n][0], ns[n][1], i, j));
+                    let ni = ns[n][0];
+                    let nj = ns[n][1];
+                    if(hexMap[ni+":"+nj]) continue;
+                    dists.push(manhattanDist(ni, nj, i, j));
                 }
                 // console.log("dists - ",dists);
                 let next_i = dists.indexOf(Math.min(...dists));
@@ -244,11 +263,16 @@ function Game(ui, width, height){
                 cj = next[1];
                 dist = manhattanDist(ci, cj, i, j);
             }
-            // console.log(route);
+            // console.log("route:", route);
             return route;
         }
 
-        // if the target cell is in current attack range
+        /**
+         * Check if the target cell is in current attack range.
+         * @param {Number} i 
+         * @param {Number} j 
+         * @returns true if is under attack
+         */
         this.canMove = function(i, j){
             if(includeCell(attackRange, [i, j])) return true;
             return false;
@@ -294,7 +318,6 @@ function Game(ui, width, height){
             this.ui = ui.hex_color(this, color);
         }
         this.changeColor(color);
-        // coloredCells.route.push(this);
     }
 
     function clearColoredCells(type="route"){
@@ -325,6 +348,19 @@ function Game(ui, width, height){
         return false;
     }
 
+    function findCells(i, j, cells, dist, far, depth){
+        if(depth > far) return {cells: cells, dist: dist};
+        let ns = neighbors(i, j);
+        for(let ni = 0; ni < ns.length; ni++){
+            let n = ns[ni];
+            if(!includeCell(cells, n)) {
+                cells.push(n);
+                dist.push(depth);
+            }
+            findCells(n[0], n[1], cells, dist, far, depth + 1);
+        }
+    }
+
     /**
      * Find cells within the range of distance (near to far)
      * @param {Number} i 
@@ -340,7 +376,7 @@ function Game(ui, width, height){
         cells.push([i, j]);
         dist.push(0);
         findCells(i, j, cells, dist, far, depth);
-        console.log(cells, dist);
+        // console.log(cells, dist);
         for(let d = 0; d < dist.length; d++){
             if(dist[d] < near){
                 dist.splice(d, 1);
@@ -353,29 +389,21 @@ function Game(ui, width, height){
         }
     }
 
-    function findCells(i, j, cells, dist, far, depth){
-        if(depth > far) return {cells: cells, dist: dist};
-        let ns = neighbors(i, j);
-        for(let ni = 0; ni < ns.length; ni++){
-            let n = ns[ni];
-            if(!includeCell(cells, n)) {
-                cells.push(n);
-                dist.push(depth);
-            }
-            findCells(n[0], n[1], cells, dist, far, depth + 1);
-        }
-    }
-
-    // select attack type with "order", "random", or other specification
+    /**
+     * Select attack type with "order", "random", or other specification
+     * @param {String} select 
+     * @param {Number} i 
+     * @param {Number} j 
+     */
     function getAttackRange(select = "order", i, j){
         if(select === "order")
             attackType = attackType % totalAttack;
         else if(select === "random")
             attackType = Math.floor(Math.random() * totalAttack);
-        console.log("getAttackRange - attackType =", attackType);
+        // console.log("getAttackRange - attackType =", attackType);
         let range = findCellsWithDist(i, j, 1, attackType+1);
         clearColoredCells("attack");
-        console.log("getAttackRange -",range.cells);
+        // console.log("getAttackRange -",range.cells);
         attackRange = range.cells;
         // color cells in the range
         for(let i = 0; i < attackRange.length; i++){
@@ -384,7 +412,7 @@ function Game(ui, width, height){
             let cell = range.cells[i];
             colorHex = coloredCells.attack[i];
             colorHex.move(cell[0],cell[1]);
-            colorHex.ui.add(); 
+            colorHex.ui.add();
         }
         attackType++;
     }
@@ -440,14 +468,15 @@ Stage(function(stage){
             });
             return {
                 add: function(){
-                    // console.log("add circle");
                     let [x, y] = getPos(circle.position[0], circle.position[1]);
                     img.appendTo(board).offset(x, y);
                 },
                 move: function(){
-                    // console.log("move circle");
                     let [x, y] = getPos(circle.position[0], circle.position[1]);
                     img.appendTo(board).offset(x, y);
+                },
+                remove: function(){
+                    board.remove(img);
                 }
             }
         },
@@ -458,8 +487,8 @@ Stage(function(stage){
             })
             return {
                 add: function(){
-                    console.log("add color hex");
                     let [x, y] = getPos(hex.i, hex.j);
+                    img.alpha(0.2);
                     img.appendTo(board).offset(x, y);
                 },
                 remove: function(){
