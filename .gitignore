@@ -1,4 +1,5 @@
 archive/
+node_modules/
 js/example.js
 js/basic.js
 js/test.js
