@@ -70,8 +70,8 @@ function Game(ui, width, height){
         }
 
         // 2. draw player
-        let x = Math.floor(width/2)-1;
-        let y = Math.floor(height/2)-1;
+        let x = Math.floor(width/2);
+        let y = Math.floor(height/2);
         new Character(ROLES.player).insert(x, y);
 
         // 3. draw enemies
@@ -217,6 +217,7 @@ function Game(ui, width, height){
             for(let e = 0; e < enemies.length; e++){
                 if(enemies[e].position[0] === i && enemies[e].position[1] === j){
                     enemies[e].ui.remove();
+                    ui.win();
                     break;
                 }
             }
@@ -436,7 +437,11 @@ Stage(function(stage){
 
     stage.background('#eeeeee');
     stage.viewbox(500, 500);
-    let width = 20, height = 9;
+    // let width = 20, height = 9;
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    let width = windowWidth / (1.5 * W);
+    let height = windowHeight / (2 * W);
 
     let board = Stage.create().appendTo(stage).pin({
         width: width,
@@ -513,6 +518,12 @@ Stage(function(stage){
                     let rad = degree * Math.PI / 180;
                     img.rotate(rad);
                 }
+            }
+        },
+        win: function(){
+            let winMessage = document.getElementsByClassName("win");
+            for(let i = 0, length = winMessage.length; i < length; i++) {
+                winMessage[i].style.display = "block";
             }
         }
     }, width, height);
