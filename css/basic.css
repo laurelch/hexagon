@@ -40,6 +40,10 @@ font-family: sans-serif;
     background: rgba(240, 240, 240, 0.8);
 }
 
+.win a:hover {
+    text-decoration: none;
+}
+
 .material-symbols-outlined {
     font-variation-settings:
         'FILL' 0,
@@ -50,7 +54,11 @@ font-family: sans-serif;
 
 a {
     text-decoration: none;
-    color: inherit;
+    color: blue;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 .win p {

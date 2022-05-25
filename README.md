@@ -1,8 +1,13 @@
 # Hexagon
+
+![Lv. 1 Demo Image](demo/hexagon-v1.gif)
+
 - [Hexagon](#hexagon)
   - [Goal](#goal)
   - [Implementation](#implementation)
   - [Gameplay](#gameplay)
+    - [Lv. 1](#lv-1)
+    - [Future](#future)
   - [References](#references)
     - [Theories](#theories)
     - [Implementations](#implementations)
@@ -15,15 +20,19 @@
     - [Utilities](#utilities)
 
 ## Goal
-Implement a game involving one or more players, where they move, collaborate, and fight enemies in a hexagonal grid. 
+Implement a game involving one or more players in the future, where they move, collaborate, and fight enemies in a hexagonal grid. 
 
 ## Implementation
 This project is implemented in HTML5, CSS, and JavaScript with [Stage.js](https://piqnt.com/stage.js/).
 
 ## Gameplay
-The player controls the character (represented as circle) that starts from the center in the screen, and will encounter pre-defined or random enemies.
+The player controls the character (represented as a circle) that starts from the center of the screen and will encounter random enemies.
 
-Several forms of attack is available for player to choose. Different forms may have different range, distance, and damage.
+### Lv. 1
+The player toggles the moving range and wins if they move to the hexagon cell where the enemy resides.
+
+### Future
+Several forms of attack will be available for players to choose from. Different forms may have different ranges, distances, and damage.
 
 ## References
 ### Theories
@@ -40,33 +49,33 @@ Several forms of attack is available for player to choose. Different forms may h
 
 ### Versions
 * Lv. 1 - A player can move from one hexagon cell to another within a defined range
-  * 5/9/22 ~ 5/24/22, approximate ~ hours
+  * implementation time range 5/9/22 ~ 5/25/22, with ~28 hours
 * Lv. 2 - A player can move and attack enemies while moving in the hexagon grid
 * Lv. 3 - To be continued...
 
 ### Elements
 Lv. 1
-- [x] Create hexagon grid.
-- [x] Create basic shape for players and enemies (round shape).
+- [x] Create a hexagon grid.
+- [x] Create a basic shape for players and enemies (round shape).
 
 Lv. 2
-- [ ] Create basic shape for environment and obstacles.
+- [ ] Create a basic shape for the environment and obstacles.
 - [ ] Create complex shapes for players and enemies.
 
 ### Gameplay
 Lv. 1
-- [x] Move player from one hexagon cell to another with mouse click.
+- [x] Move the player from one hexagon cell to another with a mouse click.
 - [x] Move player with animation.
-- [x] Show range of possible moves with color.
-- [x] Constrain player move within the range.
+- [x] Show a range of possible moves with color.
+- [x] Constrain player to move within the range.
 - [x] Show different types of move/attack - Part 1.
-  - [x] 1. Move between contiguous cells, with move range of 360°, distance toggled by key.
-- [x] Add enemies that appear randomly in the view and will disappear if player moves to that cell.
+  - [x] 1. Move between adjacent cells, with a range of 360°, distance toggled by key.
+- [x] Add enemies that appear randomly in the view and will disappear if the player moves to that cell.
 
 Lv. 2
 - [ ] Add direction of player.
 - [ ] Show different types of move/attack - Part 2.
-  - [ ] 2. Attack fan-shaped area with specified degree.
+  - [ ] 2. Attack fan-shaped area with a specified degree.
   - [ ] 3. Attack distant cells with specified rules.
 - [ ] Allow player to attack the enemies within attack range by mouse click.
 
@@ -75,7 +84,7 @@ Lv. 3
 
 ### UI/UX
 Lv. 1
-- [x] Add styled intructions.
+- [x] Add styled instructions.
 
 Lv. 2
 - [ ] Add HP bar.
@@ -83,8 +92,8 @@ Lv. 2
 
 ### Bugs
 Lv. 1
-- [x] Distance does not reflect third coordinate.
-- [x] While player is moving, the user can still click any cells to interfere the move.
+- [x] Distance does not reflect the third coordinate.
+- [x] While the player is moving, the user can still click any cells to interfere with the move.
 - [x] The colored hexagon cells are on top of existing enemy cells. Temporary workaround: set alpha (transparency) = 0.2.
 
 Lv. 2
