@@ -1,6 +1,6 @@
 # Hexagon
 
-![Lv. 1 Demo Image](demo/hexagon-v1.gif)
+![Lv. 1 Demo Image](demo/level-1/hexagon-v1.gif)
 
 - [Hexagon](#hexagon)
   - [Goal](#goal)

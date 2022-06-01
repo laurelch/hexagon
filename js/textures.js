@@ -1,4 +1,3 @@
-// const W = 60;
 Stage({
     textures : {
         "hex-bg": Stage.canvas(function(ctx){

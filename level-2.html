@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hexagon - Level 2</title>
+        <meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, height=device-height" />
+        <link href="css/basic.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    </head>
+    <body>
+        <div class="hint">
+            <p>[ Q ] - enable or disable move</p>
+            <p>[ TAB ] - change range of move</p>
+            <p>[ Left-Click ] - select blue cells to move</p>
+        </div>
+        <div class="win">
+            <h1>You Win!</h1>
+            <object data="img/replay.svg" type="image/svg+xml"></object>
+            <a href="./level-2.html"><p>Click to Replay</p></a>
+        </div>
+        <div class="about">
+            Implemented with <a href="http://piqnt.com/stage.js/">Stage.js</a>
+            - <a target="_blank" href="https://github.com/laurelch/hexagon">Source</a>
+        </div>
+        <script src="dist/stage.web.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/planck-js@0.1/dist/planck.js"></script>
+        <script src="dist/stage-planck.js"></script>
+        <script src="js/hexagon-stage.js"></script>
+        <script src="js/textures.js"></script>
+        <canvas id="canvas"/>
+    </body>
+</html>
