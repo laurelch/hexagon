@@ -26,46 +26,10 @@
  * 5. End policy
  *    - The game will end after player defeat a certain amount of enemies.
  */
- 
+
 let Mouse = Stage.Mouse;
 const SQRT3 = Math.sqrt(3);
 const W = 60; //width of whole hexagon
-const PLAYER = 1;
-const ROLES = {
-    player: 3,
-    enemy: 1,
-    companion: 2
-}
-
-function getPos(i, j){
-    let x, y;
-    if(i%2 == 0){
-        x = i * 3/4 * W;
-        y = j * SQRT3/2 * W;
-    }else {
-        x = i * 3/4 * W;
-        y = SQRT3/4 * W + j * (SQRT3/2) * W;
-    }
-    return [x,y];
-}
-
-/**
- * Convert cell [x,y] to grid [x_g, y_g] for distance calculation,
- * cell [0, 0] -> grid [0, 0]
- * cell [1, 0] -> grid [2, 1]
- * @param {*} x 
- * @param {*} y 
- */
-function cellToGrid(x, y){
-    if(x%2 === 0) return [x*2, y*2];
-    else return [x*2, y*2+1];
-}
-
-function manhattanDist(x1, y1, x2, y2){
-    let p1 = cellToGrid(x1, y1);
-    let p2 = cellToGrid(x2, y2);
-    return (Math.abs(p1[0]-p2[0])+Math.abs(p1[1]-p2[1]))/2;
-}
 
 function Game(ui, width, height){
     this.world = planck.World();
@@ -88,6 +52,12 @@ function Game(ui, width, height){
     // this.tick = function(dt){
     //     globalTime += dt;
     // }
+
+    const ROLES = {
+        player: 3,
+        enemy: 1,
+        companion: 2
+    }
 
     this.start = function(){
         // 1. draw hexagon grid
@@ -124,7 +94,6 @@ function Game(ui, width, height){
         }
         return [x, y];
     }
-
 
     this.handleKeys = function(){
         let i = player.position[0];
@@ -211,6 +180,9 @@ function Game(ui, width, height){
     function Character(identity){
         this.identity = identity;
         this.position = [0, 0];
+        this.hp = 0;
+        this.lives = 0;
+        this.level = 0;
         // this.ui = ui.arrow(this);
         if(identity === ROLES.player){
             this.ui = ui.circle(this);
@@ -225,48 +197,40 @@ function Game(ui, width, height){
          * @param {*} j 
          */
         this.insert = function(i=0, j=0){
+            this.hp = 100;
+            this.level = 1;
+            this.lives = 1;
             if (this.identity == ROLES.player){
                 this.move(i, j);
+                this.lives = 3;
                 player = this;
             }
             else if(this.identity == ROLES.enemy){
                 enemies.push(this);
                 this.move(i, j);
             }
-            // To-do: irregular shape is not rotated in center
-            // this.ui.rotate(-150);
             this.ui.add();
-        }
-
-        this.rotate = function(degree){
-            this.ui.rotate(degree);
-        }
-
-        /**
-         * Player defeats the enemy if moves to the cell that enemy resides in.
-         * @param {Number} i 
-         * @param {Number} j 
-         */
-        function defeat(i, j){
-            for(let e = 0; e < enemies.length; e++){
-                if(enemies[e].position[0] === i && enemies[e].position[1] === j){
-                    enemies[e].ui.remove();
-                    ui.win();
-                    break;
-                }
-            }
         }
 
         this.move = function(i, j){
             let prev_i = this.position[0];
             let prev_j = this.position[1];
             console.log("grid, identity",hexMap[i+":"+j],this.identity);
-            if(hexMap[i+":"+j] < this.identity) defeat(i, j);
             hexMap[prev_i+":"+prev_j] = 0;
             this.position[0] = i;
             this.position[1] = j;
             grid[i+":"+j] = this.identity;
             this.ui.move();
+        }
+
+        const getDist = (x1, y1, x2, y2) => {
+            const cellToGrid = (x, y) => {
+                let grid = x%2 === 0 ? [x*2, y*2] : [x*2, y*2 + 1];
+                return grid;
+            }
+            let p1 = cellToGrid(x1, y1);
+            let p2 = cellToGrid(x2, y2);
+            return (Math.abs(p1[0]-p2[0])+Math.abs(p1[1]-p2[1]))/2;
         }
 
         /**
@@ -280,7 +244,7 @@ function Game(ui, width, height){
             let ci = this.position[0];
             let cj = this.position[1];
             route.push([ci, cj]);
-            let dist = manhattanDist(ci, cj, i, j);
+            let dist = getDist(ci, cj, i, j);
             while(dist > 0){
                 let dists = [];
                 let ns = neighbors(ci, cj);
@@ -288,7 +252,7 @@ function Game(ui, width, height){
                     let ni = ns[n][0];
                     let nj = ns[n][1];
                     if(hexMap[ni+":"+nj]) continue;
-                    dists.push(manhattanDist(ni, nj, i, j));
+                    dists.push(getDist(ni, nj, i, j));
                 }
                 // console.log("dists - ",dists);
                 let next_i = dists.indexOf(Math.min(...dists));
@@ -296,7 +260,7 @@ function Game(ui, width, height){
                 route.push(next);
                 ci = next[0];
                 cj = next[1];
-                dist = manhattanDist(ci, cj, i, j);
+                dist = getDist(ci, cj, i, j);
             }
             // console.log("route:", route);
             return route;
@@ -483,6 +447,18 @@ Stage(function(stage){
         align: 0.01
     });
 
+    let getPos = (i,j) => {
+        let x, y;
+        if(i%2 == 0){
+            x = i * 3/4 * W;
+            y = j * SQRT3/2 * W;
+        }else {
+            x = i * 3/4 * W;
+            y = SQRT3/4 * W + j * (SQRT3/2) * W;
+        }
+        return [x,y];
+    }
+
     let game = new Game({
         active_keys: active_keys,
         hex: function(hex){
@@ -532,25 +508,6 @@ Stage(function(stage){
                 },
                 remove: function(){
                     board.remove(img);
-                }
-            }
-        },
-        arrow: function(arrow){
-            let img = Stage.image(">").pin({
-                align: 0
-            });
-            return {
-                add: function(){
-                    let [x, y] = getPos(arrow.position[0], arrow.position[1]);
-                    img.appendTo(board).offset(x, y);
-                },
-                move: function(){
-                    let [x, y] = getPos(arrow.position[0], arrow.position[1]);
-                    img.appendTo(board).offset(x, y);
-                },
-                rotate: function(degree){
-                    let rad = degree * Math.PI / 180;
-                    img.rotate(rad);
                 }
             }
         },
