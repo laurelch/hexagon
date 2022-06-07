@@ -79,9 +79,6 @@ Lv. 2
   - [ ] 3. Attack distant cells with specified rules.
 - [ ] Allow player to attack the enemies within attack range by mouse click.
 
-Lv. 3
-- [ ] Add smooth animation.
-
 ### UI/UX
 Lv. 1
 - [x] Add styled instructions.

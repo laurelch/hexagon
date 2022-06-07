@@ -213,6 +213,11 @@ function Game(ui, width, height){
             this.ui.rotate(degree);
         }
 
+        /**
+         * Player defeats the enemy if moves to the cell that enemy resides in.
+         * @param {Number} i 
+         * @param {Number} j 
+         */
         function defeat(i, j){
             for(let e = 0; e < enemies.length; e++){
                 if(enemies[e].position[0] === i && enemies[e].position[1] === j){
