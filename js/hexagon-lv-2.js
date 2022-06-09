@@ -35,16 +35,21 @@ function Game(ui, width, height){
     this.world = planck.World();
     let grid = [];
     let hexMap = {};
+    const getHex = (i, j) => { return hexMap[i+":"+j]; }
+    const setHex = (i, j, input) => { hexMap[i+":"+j] = input; }
+
     let player;
     let enemies = [];
 
+    let moveWASD = false;
     let attackType = 0;
     let totalAttack = 5;
-    let attackActive = false; // toggle with Q
+    // let attackActive = false; // toggle with Q
     let acceptClick = true;
     let attackRange = [];
     let coloredCells = {
         route: [],
+        move: [],
         attack: []
     };
 
@@ -64,7 +69,7 @@ function Game(ui, width, height){
         for(let i = 0; i < width; i ++){
             for(let j = 0; j < height; j++){
                 new Hexagon(i,j).insert(i,j);
-                hexMap[i+":"+j] = 0;
+                setHex(i, j, 0);
             }
         }
 
@@ -86,11 +91,9 @@ function Game(ui, width, height){
     this.getRandomCell = function(){
         let x = Math.floor(Math.random() * width);
         let y = Math.floor(Math.random() * height);
-        let key = x + ":" + y;
-        while(hexMap[key] > 0){
+        while(getHex(x, y) > 0){
             x = Math.floor(Math.random() * width);
             y = Math.floor(Math.random() * height);
-            key = x + ":" + y;
         }
         return [x, y];
     }
@@ -98,34 +101,41 @@ function Game(ui, width, height){
     this.handleKeys = function(){
         let i = player.position[0];
         let j = player.position[1];
-        if(ui.active_keys.ArrowLeft || ui.active_keys.a){
-            console.log("Key pressed: <- or A");
-        }
-        if(ui.active_keys.ArrowRight || ui.active_keys.d){
-            console.log("Key pressed: -> or D");
-        }
-        if(ui.active_keys.ArrowUp || ui.active_keys.w){
-            console.log("Key pressed: Up or W");
-        }
-        if(ui.active_keys.ArrowDown || ui.active_keys.s){
-            console.log("Key pressed: Down or S");
-        }
-        if(ui.active_keys.Tab){
-            console.log("Key pressed: Tab");
-            if(attackActive){
-                getAttackRange("order", i, j);
+        // Move character with WASD
+        if(moveWASD){
+            if(ui.active_keys.ArrowLeft || ui.active_keys.a){
+                console.log("Key pressed: <- or A");
+                player.move(i-1, j);
+            }
+            if(ui.active_keys.ArrowRight || ui.active_keys.d){
+                console.log("Key pressed: -> or D");
+                player.move(i+1, j);
+            }
+            if(ui.active_keys.ArrowUp || ui.active_keys.w){
+                console.log("Key pressed: Up or W");
+                player.move(i, j-1);
+            }
+            if(ui.active_keys.ArrowDown || ui.active_keys.s){
+                console.log("Key pressed: Down or S");
+                player.move(i, j+1);
             }
         }
-        if(ui.active_keys.q){
-            console.log("Key pressed: Q");
-            attackActive = !attackActive;
-            if(attackActive){
-                attackType = 0;
-                getAttackRange("order", i, j);
-            }else{
-                clearColoredCells("attack");
-            }
-        }
+        // if(ui.active_keys.Tab){
+        //     console.log("Key pressed: Tab");
+        //     if(attackActive){
+        //         getAttackRange("order", i, j);
+        //     }
+        // }
+        // if(ui.active_keys.q){
+        //     console.log("Key pressed: Q");
+        //     attackActive = !attackActive;
+        //     if(attackActive){
+        //         attackType = 0;
+        //         getAttackRange("order", i, j);
+        //     }else{
+        //         clearColoredCells("attack");
+        //     }
+        // }
         if(ui.active_keys.Space){
             console.log("Key pressed: Space");
         }
@@ -136,13 +146,23 @@ function Game(ui, width, height){
         this.j = j;
         this.ui = ui.hex(this);
         this.click = function(){
+            // console.log("Hexagon - click", acceptClick, player.canAttack(this.i,this.j));
+            // if(acceptClick && !player.canAttack(this.i, this.j)){
+            //     console.log("can click, but cannot attack");
+            // } else if (acceptClick && player.canAttack(this.i, this.j)){
+            //     clearColoredCells("attack");
+            //     attackActive = false;
+            //     player.stepMove(this.i, this.j);
+            // }
             console.log("Hexagon - click", acceptClick, player.canMove(this.i,this.j));
-            if(acceptClick && !player.canMove(this.i, this.j)){
-                return;
-            } else if (acceptClick && player.canMove(this.i, this.j)){
-                clearColoredCells("attack");
-                attackActive = false;
-                player.stepMove(this.i, this.j);
+            if(acceptClick && player.getTurn()){
+                if(!player.canMove(this.i, this.j)){
+                    console.log("can click, but cannot move");
+                }else{
+                    clearColoredCells("move");
+                    attackActive = false;
+                    player.stepMove(this.i, this.j);
+                }
             }
         }
     }
@@ -151,7 +171,7 @@ function Game(ui, width, height){
         // setHexagon(i, j, this);
         grid.push(this);
         this.ui.add();
-        hexMap[i+":"+j] = this.identity;
+        setHex(i, j, this.identity);
     }
 
     /**
@@ -183,6 +203,16 @@ function Game(ui, width, height){
         this.hp = 0;
         this.lives = 0;
         this.level = 0;
+        this.range = 0;
+        this.isTurn = false;
+        const setTurn = (turn=false) => {
+            this.isTurn = turn;
+            if(turn){
+                this.displayMoveRange();
+            }
+        }
+        this.getTurn = function(){ return this.isTurn; }
+
         // this.ui = ui.arrow(this);
         if(identity === ROLES.player){
             this.ui = ui.circle(this);
@@ -200,10 +230,12 @@ function Game(ui, width, height){
             this.hp = 100;
             this.level = 1;
             this.lives = 1;
-            if (this.identity == ROLES.player){
+            this.range = 3;
+            if(this.identity == ROLES.player){
                 this.move(i, j);
                 this.lives = 3;
                 player = this;
+                setTurn(true);
             }
             else if(this.identity == ROLES.enemy){
                 enemies.push(this);
@@ -215,12 +247,60 @@ function Game(ui, width, height){
         this.move = function(i, j){
             let prev_i = this.position[0];
             let prev_j = this.position[1];
-            console.log("grid, identity",hexMap[i+":"+j],this.identity);
-            hexMap[prev_i+":"+prev_j] = 0;
-            this.position[0] = i;
-            this.position[1] = j;
-            grid[i+":"+j] = this.identity;
-            this.ui.move();
+            console.log("grid, identity", getHex(i, j), this.identity);
+            if(this.canMove(i, j)){
+                setHex(prev_i, prev_j, 0);
+                this.position[0] = i;
+                this.position[1] = j;
+                setHex(i, j, this.identity);
+                this.ui.move();
+            }else{
+                console.log("Cannot move");
+            }
+        }
+
+        this.displayMoveRange = function(){
+            let x = this.position[0];
+            let y = this.position[1];
+            let range = findCellsWithDist(x, y, 1, this.range);
+            clearColoredCells("move");
+            let moveRange = range.cells;
+            for(let i = 0; i < moveRange.length; i++){
+                let hex = new ColoredHexagon("blue");
+                coloredCells.move.push(hex);
+                let cell = range.cells[i];
+                colorHex = coloredCells.move[i];
+                colorHex.move(cell[0],cell[1]);
+                colorHex.ui.add();
+            }
+        }
+
+        /**
+         * Select attack type with "order", "random", or other specification
+         * @param {String} select 
+         * @param {Number} i 
+         * @param {Number} j 
+         */
+        function getAttackRange(select = "order", i, j){
+            if(select === "order")
+                attackType = attackType % totalAttack;
+            else if(select === "random")
+                attackType = Math.floor(Math.random() * totalAttack);
+            // console.log("getAttackRange - attackType =", attackType);
+            let range = findCellsWithDist(i, j, 1, attackType+1);
+            clearColoredCells("attack");
+            // console.log("getAttackRange -",range.cells);
+            attackRange = range.cells;
+            // color cells in the range
+            for(let i = 0; i < attackRange.length; i++){
+                let hex = new ColoredHexagon("blue");
+                coloredCells.attack.push(hex);
+                let cell = range.cells[i];
+                colorHex = coloredCells.attack[i];
+                colorHex.move(cell[0],cell[1]);
+                colorHex.ui.add();
+            }
+            attackType++;
         }
 
         const getDist = (x1, y1, x2, y2) => {
@@ -251,7 +331,7 @@ function Game(ui, width, height){
                 for(let n = 0; n < ns.length; n++){
                     let ni = ns[n][0];
                     let nj = ns[n][1];
-                    if(hexMap[ni+":"+nj]) continue;
+                    if(getHex(ni, nj) === ROLES.companion) continue;
                     dists.push(getDist(ni, nj, i, j));
                 }
                 // console.log("dists - ",dists);
@@ -272,9 +352,20 @@ function Game(ui, width, height){
          * @param {Number} j 
          * @returns true if is under attack
          */
-        this.canMove = function(i, j){
+        this.canAttack = function(i, j){
             if(includeCell(attackRange, [i, j])) return true;
             return false;
+        }
+
+        /**
+         * Check if current character can move to cell (i, j).
+         * @param {Number} i 
+         * @param {Number} j 
+         * @returns true if can move
+         */
+        this.canMove = function(i, j){
+            if(getHex(i, j) !== 0) return false;
+            return true;
         }
 
         /**
@@ -301,6 +392,7 @@ function Game(ui, width, height){
             // clear all colored cells after arrival
             setTimeout(()=>{
                 clearColoredCells("route");
+                setTurn(false);
                 acceptClick = true;
             }, route.length * 500)
         }
@@ -325,6 +417,11 @@ function Game(ui, width, height){
                 coloredCells.route[i].ui.remove();
             }
             coloredCells.route = [];
+        }else if(type === "move"){
+            for(let i = 0; i < coloredCells.move.length; i++){
+                coloredCells.move[i].ui.remove();
+            }
+            coloredCells.move = [];
         }else if(type === "attack"){
             for(let i = 0; i < coloredCells.attack.length; i++){
                 coloredCells.attack[i].ui.remove();

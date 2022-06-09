@@ -65,7 +65,7 @@ Lv. 2
 ### Gameplay
 Lv. 1
 - [x] Move the player from one hexagon cell to another with a mouse click.
-- [x] Move player with animation.
+- [x] Move player with step-wise animation.
 - [x] Show a range of possible moves with color.
 - [x] Constrain player to move within the range.
 - [x] Show different types of move/attack - Part 1.
@@ -73,7 +73,8 @@ Lv. 1
 - [x] Add enemies that appear randomly in the view and will disappear if the player moves to that cell.
 
 Lv. 2
-- [ ] Add direction of player.
+- [Canceled] Add direction of player.
+- [x] Move player with WASD.
 - [ ] Show different types of move/attack - Part 2.
   - [ ] 2. Attack fan-shaped area with a specified degree.
   - [ ] 3. Attack distant cells with specified rules.
