@@ -4,7 +4,7 @@
  * 2. The player can move the shape with keys (WSAD) or pressing down mouse button (left click).
  *    - Each character has a limited range of movement.
  *      -> UI for steps left.
- * 3. After move, the player can select from a few skills to attack enemies within the attack range.
+ * 3. After move or without move, the player can select from a few skills to attack enemies within the attack range.
  *    - Selection of skills.
  *      -> UI for selection.
  *    - Attack range: single, line, circle. 
@@ -42,9 +42,6 @@ function Game(ui, width, height){
     let enemies = [];
 
     let moveWASD = false;
-    let attackType = 0;
-    let totalAttack = 5;
-    // let attackActive = false; // toggle with Q
     let acceptClick = true;
     let attackRange = [];
     let coloredCells = {
@@ -120,22 +117,6 @@ function Game(ui, width, height){
                 player.move(i, j+1);
             }
         }
-        // if(ui.active_keys.Tab){
-        //     console.log("Key pressed: Tab");
-        //     if(attackActive){
-        //         getAttackRange("order", i, j);
-        //     }
-        // }
-        // if(ui.active_keys.q){
-        //     console.log("Key pressed: Q");
-        //     attackActive = !attackActive;
-        //     if(attackActive){
-        //         attackType = 0;
-        //         getAttackRange("order", i, j);
-        //     }else{
-        //         clearColoredCells("attack");
-        //     }
-        // }
         if(ui.active_keys.Space){
             console.log("Key pressed: Space");
         }
@@ -146,14 +127,6 @@ function Game(ui, width, height){
         this.j = j;
         this.ui = ui.hex(this);
         this.click = function(){
-            // console.log("Hexagon - click", acceptClick, player.canAttack(this.i,this.j));
-            // if(acceptClick && !player.canAttack(this.i, this.j)){
-            //     console.log("can click, but cannot attack");
-            // } else if (acceptClick && player.canAttack(this.i, this.j)){
-            //     clearColoredCells("attack");
-            //     attackActive = false;
-            //     player.stepMove(this.i, this.j);
-            // }
             console.log("Hexagon - click", acceptClick, player.canMove(this.i,this.j));
             if(acceptClick && player.getTurn()){
                 if(!player.canMove(this.i, this.j)){
@@ -168,7 +141,6 @@ function Game(ui, width, height){
     }
 
     Hexagon.prototype.insert = function(i, j){
-        // setHexagon(i, j, this);
         grid.push(this);
         this.ui.add();
         setHex(i, j, this.identity);
@@ -273,34 +245,6 @@ function Game(ui, width, height){
                 colorHex.move(cell[0],cell[1]);
                 colorHex.ui.add();
             }
-        }
-
-        /**
-         * Select attack type with "order", "random", or other specification
-         * @param {String} select 
-         * @param {Number} i 
-         * @param {Number} j 
-         */
-        function getAttackRange(select = "order", i, j){
-            if(select === "order")
-                attackType = attackType % totalAttack;
-            else if(select === "random")
-                attackType = Math.floor(Math.random() * totalAttack);
-            // console.log("getAttackRange - attackType =", attackType);
-            let range = findCellsWithDist(i, j, 1, attackType+1);
-            clearColoredCells("attack");
-            // console.log("getAttackRange -",range.cells);
-            attackRange = range.cells;
-            // color cells in the range
-            for(let i = 0; i < attackRange.length; i++){
-                let hex = new ColoredHexagon("blue");
-                coloredCells.attack.push(hex);
-                let cell = range.cells[i];
-                colorHex = coloredCells.attack[i];
-                colorHex.move(cell[0],cell[1]);
-                colorHex.ui.add();
-            }
-            attackType++;
         }
 
         const getDist = (x1, y1, x2, y2) => {
@@ -483,34 +427,6 @@ function Game(ui, width, height){
             cells: cells,
             dist: dist
         }
-    }
-
-    /**
-     * Select attack type with "order", "random", or other specification
-     * @param {String} select 
-     * @param {Number} i 
-     * @param {Number} j 
-     */
-    function getAttackRange(select = "order", i, j){
-        if(select === "order")
-            attackType = attackType % totalAttack;
-        else if(select === "random")
-            attackType = Math.floor(Math.random() * totalAttack);
-        // console.log("getAttackRange - attackType =", attackType);
-        let range = findCellsWithDist(i, j, 1, attackType+1);
-        clearColoredCells("attack");
-        // console.log("getAttackRange -",range.cells);
-        attackRange = range.cells;
-        // color cells in the range
-        for(let i = 0; i < attackRange.length; i++){
-            let hex = new ColoredHexagon("blue");
-            coloredCells.attack.push(hex);
-            let cell = range.cells[i];
-            colorHex = coloredCells.attack[i];
-            colorHex.move(cell[0],cell[1]);
-            colorHex.ui.add();
-        }
-        attackType++;
     }
 }
 
