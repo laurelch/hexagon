@@ -31,24 +31,166 @@ let Mouse = Stage.Mouse;
 const SQRT3 = Math.sqrt(3);
 const W = 60; //width of whole hexagon
 
+class Grid{
+    constructor(){
+        this.grid = [];
+        this.track = {};
+        this.coloredCells = {
+            route: [],
+            move: [],
+            attack: []
+        };
+        this.attackRange = [];
+    }
+
+    add(hexagon){
+        this.grid.push(hexagon);
+    }
+
+    getHex(i, j){
+        return this.track[i+":"+j];
+    }
+
+    clearHex(i, j){
+        if(this.getHex(i, j)){
+            this.track[i+":"+j] = 0;
+        }
+    }
+
+    setHex(i, j, role){
+        this.track[i+":"+j] = role;
+    }
+
+    moveChar(prev_i, prev_j, i, j, role){
+        this.clearHex(prev_i, prev_j);
+        this.setHex(i, j, role);
+    }
+
+    getRouteCells(){
+        return this.coloredCells.route;
+    }
+
+    addColoredCell(type="route", hexagon){
+       this.coloredCells[type].push(hexagon);
+    }
+
+    /**
+     * Get a random cell [x, y] that is not currently occupied
+     * @returns [x, y]
+     */
+    getRandomCell(width, height){
+        let x = Math.floor(Math.random() * width);
+        let y = Math.floor(Math.random() * height);
+        while(this.getHex(x, y) > 0){
+            x = Math.floor(Math.random() * width);
+            y = Math.floor(Math.random() * height);
+        }
+        return [x, y];
+    }
+
+    /**
+     * Returns neighbors of one hexagon cell
+     * @param {number} i 
+     * @param {number} j 
+     * @returns array of neighbors [i,j]
+     */
+    getNeighbors(i, j){
+        let neighbors = [];
+        // top-left, top, top-right, bottom-left, bottom, bottom-right
+        let i_list = [-1, 0, 1, -1, 0, 1];
+        let j_list = [];
+        i % 2 == 0 ? j_list = [-1, -1, -1, 0, 1, 0]:
+                    j_list = [0, -1, 0, 1, 1, 1];
+        for(let n = 0; n < 6; n++){
+            let new_i = i + i_list[n];
+            if(new_i < 0) continue;
+            let new_j = j + j_list[n];
+            if(new_j < 0) continue;
+            neighbors.push([new_i, new_j]);
+        }
+        return neighbors;
+    }
+
+    /**
+     * Check if a cell [i, j] is in a list of cells
+     * @param {*} list 
+     * @param {*} cell 
+     * @returns 
+     */
+    includeCell(list, cell){
+        for(let i = 0; i < list.length; i++){
+            if(list[i][0] === cell[0] && list[i][1] === cell[1]) return true;
+        }
+        return false;
+    }
+
+    findCells(i, j, cells, dist, far, depth){
+        if(depth > far) return {cells: cells, dist: dist};
+        let ns = this.getNeighbors(i, j);
+        for(let ni = 0; ni < ns.length; ni++){
+            let n = ns[ni];
+            if(!this.includeCell(cells, n)) {
+                cells.push(n);
+                dist.push(depth);
+            }
+            this.findCells(n[0], n[1], cells, dist, far, depth + 1);
+        }
+    }
+
+    /**
+     * Find cells within the range of distance (near to far)
+     * @param {Number} i 
+     * @param {Number} j 
+     * @param {Number} near 
+     * @param {Number} far 
+     * @returns
+     */
+    findCellsWithDist(i, j, near, far){
+        let cells = [];
+        let dist = [];
+        let depth = 1;
+        cells.push([i, j]);
+        dist.push(0);
+        this.findCells(i, j, cells, dist, far, depth);
+        // console.log(cells, dist);
+        for(let d = 0; d < dist.length; d++){
+            if(dist[d] < near){
+                dist.splice(d, 1);
+                cells.splice(d, 1);
+            }
+        }
+        return {
+            cells: cells,
+            dist: dist
+        }
+    }
+
+    clearColoredCells(type="route"){
+        for(let i = 0; i < this.coloredCells[type].length; i++){
+            this.coloredCells[type][i].ui.remove();
+            if(type === "attack"){
+                this.attackRange = [];
+            }
+        }
+    }
+}
+
 function Game(ui, width, height){
     this.world = planck.World();
-    let grid = [];
-    let hexMap = {};
-    const getHex = (i, j) => { return hexMap[i+":"+j]; }
-    const setHex = (i, j, input) => { hexMap[i+":"+j] = input; }
+    this.grid = new Grid();
+    const getGrid = () => {return this.grid;}
 
     let player;
     let enemies = [];
 
     let moveWASD = false;
     let acceptClick = true;
-    let attackRange = [];
-    let coloredCells = {
-        route: [],
-        move: [],
-        attack: []
-    };
+    const setAcceptClick = (accept) => {
+        acceptClick = accept;
+    }
+    const getAcceptClick = () => {
+        return acceptClick;
+    }
 
     // let globalTime = 0;
     // this.tick = function(dt){
@@ -56,6 +198,7 @@ function Game(ui, width, height){
     // }
 
     const ROLES = {
+        default: 0,
         player: 3,
         enemy: 1,
         companion: 2
@@ -65,8 +208,7 @@ function Game(ui, width, height){
         // 1. draw hexagon grid
         for(let i = 0; i < width; i ++){
             for(let j = 0; j < height; j++){
-                new Hexagon(i,j).insert(i,j);
-                setHex(i, j, 0);
+                new Hexagon(i, j).insert();
             }
         }
 
@@ -76,29 +218,14 @@ function Game(ui, width, height){
         new Character(ROLES.player).insert(x, y);
 
         // 3. draw enemies
-        let [enemy_x, enemy_y] = this.getRandomCell();
+        let [enemy_x, enemy_y] = this.grid.getRandomCell(width, height);
         new Character(ROLES.enemy).insert(enemy_x, enemy_y);
-        acceptClick = true;
-    }
-
-    /**
-     * Get a random cell [x, y] that is not currently occupied
-     * @returns [x, y]
-     */
-    this.getRandomCell = function(){
-        let x = Math.floor(Math.random() * width);
-        let y = Math.floor(Math.random() * height);
-        while(getHex(x, y) > 0){
-            x = Math.floor(Math.random() * width);
-            y = Math.floor(Math.random() * height);
-        }
-        return [x, y];
+        setAcceptClick(true);
     }
 
     this.handleKeys = function(){
         let i = player.position[0];
         let j = player.position[1];
-        // Move character with WASD
         if(moveWASD){
             if(ui.active_keys.ArrowLeft || ui.active_keys.a){
                 console.log("Key pressed: <- or A");
@@ -122,75 +249,79 @@ function Game(ui, width, height){
         }
     }
 
-    function Hexagon(i,j){
-        this.i = i;
-        this.j = j;
-        this.ui = ui.hex(this);
-        this.click = function(){
-            console.log("Hexagon - click", acceptClick, player.canMove(this.i,this.j));
-            if(acceptClick && player.getTurn()){
+    class Hexagon{
+        constructor(i=0, j=0, type=null){
+            this.grid = getGrid();
+            this.i = i;
+            this.j = j;
+            this.identity = ROLES.default;
+            if(type){
+                this.changeIdentity(type);
+            }else{
+                this.ui = ui.hex(this);
+            }
+        }
+        click(){
+            console.log("Hexagon - click", getAcceptClick(), player.canMove(this.i,this.j));
+            if(getAcceptClick() && player.getTurn()){
                 if(!player.canMove(this.i, this.j)){
                     console.log("can click, but cannot move");
                 }else{
-                    clearColoredCells("move");
-                    attackActive = false;
+                    this.grid.clearColoredCells("move");
+                    setAcceptClick(false);
                     player.stepMove(this.i, this.j);
                 }
             }
         }
-    }
-
-    Hexagon.prototype.insert = function(i, j){
-        grid.push(this);
-        this.ui.add();
-        setHex(i, j, this.identity);
-    }
-
-    /**
-     * Returns neighbors of one hexagon cell
-     * @param {number} i 
-     * @param {number} j 
-     * @returns array of neighbors [i,j]
-     */
-    function neighbors(i, j){
-        let neighbors = [];
-        // top-left, top, top-right, bottom-left, bottom, bottom-right
-        let i_list = [-1, 0, 1, -1, 0, 1];
-        let j_list = [];
-        i % 2 == 0 ? j_list = [-1, -1, -1, 0, 1, 0]:
-                    j_list = [0, -1, 0, 1, 1, 1];
-        for(let n = 0; n < 6; n++){
-            let new_i = i + i_list[n];
-            if(new_i < 0) continue;
-            let new_j = j + j_list[n];
-            if(new_j < 0) continue;
-            neighbors.push([new_i, new_j]);
+        insert(){
+            this.grid.add(this);
+            this.grid.setHex(this.i, this.j, this.identity);
+            this.ui.add();
         }
-        return neighbors;
+        move(i, j){
+            this.grid.moveChar(this.i, this.j, i, j, this.identity);
+            this.i = i;
+            this.j = j;
+            this.ui.add();
+        }
+        changeIdentity(type){
+            let color = "white";
+            if(type == "move"){
+                color = "blue";
+            }else if(type == "route"){
+                color = "red";
+            }
+            this.ui = ui.hex_color(this, color);
+        }
     }
 
-    function Character(identity){
-        this.identity = identity;
-        this.position = [0, 0];
-        this.hp = 0;
-        this.lives = 0;
-        this.level = 0;
-        this.range = 0;
-        this.isTurn = false;
-        const setTurn = (turn=false) => {
+    class Character{
+        constructor(identity){
+            this.grid = getGrid();
+            this.identity = identity;
+            this.position = [0, 0];
+            this.hp = 0;
+            this.lives = 0;
+            this.level = 0;
+            this.range = 0;
+            this.isTurn = false;
+            if(identity === ROLES.player){
+                this.ui = ui.circle(this);
+            }
+            else if(identity === ROLES.enemy){
+                this.ui = ui.circle(this,"red");
+            }
+        }
+
+        setTurn(turn){
             this.isTurn = turn;
             if(turn){
                 this.displayMoveRange();
             }
         }
-        this.getTurn = function(){ return this.isTurn; }
 
-        // this.ui = ui.arrow(this);
-        if(identity === ROLES.player){
-            this.ui = ui.circle(this);
-        }
-        else if(identity === ROLES.enemy){
-            this.ui = ui.circle(this,"red");
+        getTurn(){
+            return this.isTurn;
         }
 
         /**
@@ -198,7 +329,7 @@ function Game(ui, width, height){
          * @param {*} i 
          * @param {*} j 
          */
-        this.insert = function(i=0, j=0){
+        insert(i=0, j=0){
             this.hp = 100;
             this.level = 1;
             this.lives = 1;
@@ -207,7 +338,7 @@ function Game(ui, width, height){
                 this.move(i, j);
                 this.lives = 3;
                 player = this;
-                setTurn(true);
+                this.setTurn(true);
             }
             else if(this.identity == ROLES.enemy){
                 enemies.push(this);
@@ -216,38 +347,56 @@ function Game(ui, width, height){
             this.ui.add();
         }
 
-        this.move = function(i, j){
+        /**
+         * Check if the target cell is in current attack range.
+         * @param {Number} i 
+         * @param {Number} j 
+         * @returns true if is under attack
+         */
+         canAttack(i, j){
+            if(includeCell(attackRange, [i, j])) return true;
+            return false;
+        }
+
+        /**
+         * Check if current character can move to cell (i, j).
+         * @param {Number} i 
+         * @param {Number} j 
+         * @returns true if can move
+         */
+        canMove(i, j){
+            if(this.grid.getHex(i, j) !== 0) return false;
+            return true;
+        }
+
+        move(i, j){
             let prev_i = this.position[0];
             let prev_j = this.position[1];
-            console.log("grid, identity", getHex(i, j), this.identity);
+            // console.log("grid, identity", this.grid.getHex(i, j), this.identity);
             if(this.canMove(i, j)){
-                setHex(prev_i, prev_j, 0);
                 this.position[0] = i;
                 this.position[1] = j;
-                setHex(i, j, this.identity);
+                this.grid.moveChar(prev_i, prev_j, i, j, this.identity);
                 this.ui.move();
             }else{
                 console.log("Cannot move");
             }
         }
 
-        this.displayMoveRange = function(){
+        displayMoveRange(){
             let x = this.position[0];
             let y = this.position[1];
-            let range = findCellsWithDist(x, y, 1, this.range);
-            clearColoredCells("move");
-            let moveRange = range.cells;
-            for(let i = 0; i < moveRange.length; i++){
-                let hex = new ColoredHexagon("blue");
-                coloredCells.move.push(hex);
-                let cell = range.cells[i];
-                colorHex = coloredCells.move[i];
-                colorHex.move(cell[0],cell[1]);
-                colorHex.ui.add();
+            let range = this.grid.findCellsWithDist(x, y, 1, this.range).cells;
+            this.grid.clearColoredCells("move");
+            for(let i = 0; i < range.length; i++){
+                let cell = range[i];
+                let hex = new Hexagon(cell[0], cell[1], "move");
+                this.grid.addColoredCell("move", hex);
+                hex.ui.add();
             }
         }
 
-        const getDist = (x1, y1, x2, y2) => {
+        getDist(x1, y1, x2, y2){
             const cellToGrid = (x, y) => {
                 let grid = x%2 === 0 ? [x*2, y*2] : [x*2, y*2 + 1];
                 return grid;
@@ -263,53 +412,34 @@ function Game(ui, width, height){
          * @param {Number} j 
          * @returns route from one cell to another
          */
-        this.route = function(i, j){
-            let route = [];
+        route(i, j){
+            let path = [];
             let ci = this.position[0];
             let cj = this.position[1];
-            route.push([ci, cj]);
-            let dist = getDist(ci, cj, i, j);
-            while(dist > 0){
+            path.push([ci, cj]);
+            let dist = this.getDist(ci, cj, i, j);
+            let maxDist = dist;
+            while(dist > 0 && path.length <= maxDist){
                 let dists = [];
-                let ns = neighbors(ci, cj);
+                let ns = this.grid.getNeighbors(ci, cj);
                 for(let n = 0; n < ns.length; n++){
                     let ni = ns[n][0];
                     let nj = ns[n][1];
-                    if(getHex(ni, nj) === ROLES.companion) continue;
-                    dists.push(getDist(ni, nj, i, j));
+                    if(this.canMove(ni, nj)){
+                        dists.push(this.getDist(ni, nj, i, j));
+                    }else{
+                        dists.push(maxDist);
+                    }
                 }
                 // console.log("dists - ",dists);
                 let next_i = dists.indexOf(Math.min(...dists));
                 let next = ns[next_i];
-                route.push(next);
+                path.push(next);
                 ci = next[0];
                 cj = next[1];
-                dist = getDist(ci, cj, i, j);
+                dist = this.getDist(ci, cj, i, j);
             }
-            // console.log("route:", route);
-            return route;
-        }
-
-        /**
-         * Check if the target cell is in current attack range.
-         * @param {Number} i 
-         * @param {Number} j 
-         * @returns true if is under attack
-         */
-        this.canAttack = function(i, j){
-            if(includeCell(attackRange, [i, j])) return true;
-            return false;
-        }
-
-        /**
-         * Check if current character can move to cell (i, j).
-         * @param {Number} i 
-         * @param {Number} j 
-         * @returns true if can move
-         */
-        this.canMove = function(i, j){
-            if(getHex(i, j) !== 0) return false;
-            return true;
+            return path;
         }
 
         /**
@@ -317,17 +447,16 @@ function Game(ui, width, height){
          * @param {number} i 
          * @param {number} j 
          */
-        this.stepMove = function(i, j){
+        stepMove(i, j){
             // move player to the clicked hexagon
             let route = player.route(i, j);
-            acceptClick = false;
+            setAcceptClick(false);
             for(let r = 0; r < route.length; r++){
                 // color cells in the route
-                let hex = new ColoredHexagon();
-                coloredCells.route.push(hex);
-                colorHex = coloredCells.route[r];
-                colorHex.move(route[r][0],route[r][1]);
-                colorHex.ui.add();
+                let hex = new Hexagon(route[r][0], route[r][1], "route");
+                this.grid.addColoredCell("route", hex);
+                hex.move(route[r][0], route[r][1]);
+                hex.ui.add();
                 // move player to cells in the route one by one
                 setTimeout(()=>{
                     player.move(route[r][0], route[r][1]);
@@ -335,97 +464,10 @@ function Game(ui, width, height){
             }
             // clear all colored cells after arrival
             setTimeout(()=>{
-                clearColoredCells("route");
-                setTurn(false);
-                acceptClick = true;
+                this.grid.clearColoredCells("route");
+                this.setTurn(false);
+                setAcceptClick(true);
             }, route.length * 500)
-        }
-    }
-
-    function ColoredHexagon(color = "red"){
-        this.i = 0;
-        this.j = 0;
-        this.move = function(i, j){
-            this.i = i;
-            this.j = j;
-        }
-        this.changeColor = function(color){
-            this.ui = ui.hex_color(this, color);
-        }
-        this.changeColor(color);
-    }
-
-    function clearColoredCells(type="route"){
-        if(type === "route"){
-            for(let i = 0; i < coloredCells.route.length; i++){
-                coloredCells.route[i].ui.remove();
-            }
-            coloredCells.route = [];
-        }else if(type === "move"){
-            for(let i = 0; i < coloredCells.move.length; i++){
-                coloredCells.move[i].ui.remove();
-            }
-            coloredCells.move = [];
-        }else if(type === "attack"){
-            for(let i = 0; i < coloredCells.attack.length; i++){
-                coloredCells.attack[i].ui.remove();
-            }
-            coloredCells.attack = [];
-            attackRange = [];
-        }
-    }
-
-    /**
-     * Check if a cell [i, j] is in a list of cells
-     * @param {*} list 
-     * @param {*} cell 
-     * @returns 
-     */
-    function includeCell(list, cell){
-        for(let i = 0; i < list.length; i++){
-            if(list[i][0] === cell[0] && list[i][1] === cell[1]) return true;
-        }
-        return false;
-    }
-
-    function findCells(i, j, cells, dist, far, depth){
-        if(depth > far) return {cells: cells, dist: dist};
-        let ns = neighbors(i, j);
-        for(let ni = 0; ni < ns.length; ni++){
-            let n = ns[ni];
-            if(!includeCell(cells, n)) {
-                cells.push(n);
-                dist.push(depth);
-            }
-            findCells(n[0], n[1], cells, dist, far, depth + 1);
-        }
-    }
-
-    /**
-     * Find cells within the range of distance (near to far)
-     * @param {Number} i 
-     * @param {Number} j 
-     * @param {Number} near 
-     * @param {Number} far 
-     * @returns
-     */
-    function findCellsWithDist(i, j, near, far){
-        let cells = [];
-        let dist = [];
-        let depth = 1;
-        cells.push([i, j]);
-        dist.push(0);
-        findCells(i, j, cells, dist, far, depth);
-        // console.log(cells, dist);
-        for(let d = 0; d < dist.length; d++){
-            if(dist[d] < near){
-                dist.splice(d, 1);
-                cells.splice(d, 1);
-            }
-        }
-        return {
-            cells: cells,
-            dist: dist
         }
     }
 }
