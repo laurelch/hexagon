@@ -1,3 +1,5 @@
+import { W } from "./hexagon-lv-2.js";
+
 Stage({
     textures : {
         "hex-bg": Stage.canvas(function(ctx){

@@ -1,5 +1,30 @@
+class Hexagon{
+    constructor(ui, map, i=0, j=0, color=null){
+        this.map = map;
+        this.i = i;
+        this.j = j;
+        if(color){
+            this.ui = ui.hex_color(this, color);
+        }else{
+            this.ui = ui.hex(this);
+        }
+    }
+    click(){
+        return [this.i, this.j];
+    }
+    insert(){
+        this.ui.add();
+    }
+    move(i, j){
+        this.i = i;
+        this.j = j;
+        this.ui.add();
+    }
+}
+
 export default class HexMap{
-    constructor(){
+    constructor(ui){
+        this.ui = ui;
         this.hexmap = [];
         this.track = {};
         this.coloredCells = {
@@ -8,37 +33,68 @@ export default class HexMap{
             attack: []
         };
         this.attackRange = [];
+        this.types = {
+            "route": "yellow",
+            "move": "blue",
+            "": "red"
+        }
+        this.acceptClick = true;
     }
 
-    add(hexagon){
-        this.hexmap.push(hexagon);
-    }
-
-    getHex(i, j){
-        return this.track[i+":"+j];
-    }
-
-    clearHex(i, j){
-        if(this.getHex(i, j)){
-            this.track[i+":"+j] = 0;
+    initialize(width, height){
+        for(let i = 0; i < width; i ++){
+            for(let j = 0; j < height; j++){
+                let hex = new Hexagon(this.ui, this, i, j);
+                // this.add(hex);
+                this.hexmap.push(hex);
+                this.clearChar(i, j);
+                hex.insert();
+            }
         }
     }
 
-    setHex(i, j, role){
+    setAcceptClick(accept){
+        this.acceptClick = accept;
+    }
+
+    canClick(){
+        return this.acceptClick;
+    }
+
+    addColor(i, j, type){
+        const color = this.types.hasOwnProperty(type) ? this.types[type] : this.types[""];
+        let hex = new Hexagon(this.ui, this, i, j, color);
+        if(!this.coloredCells[type]){
+            console.log("new type");
+            this.coloredCells[type] = [hex];
+        }else{
+            this.coloredCells[type].push(hex);
+        }
+        hex.insert();
+    }
+
+    clearType(type){
+        for(let i = 0; i < this.coloredCells[type].length; i++){
+            this.coloredCells[type][i].ui.remove();
+        }
+        this.coloredCells[type] = [];
+    }
+
+    getChar(i, j){
+        return this.track[i+":"+j];
+    }
+
+    clearChar(i, j){
+        this.track[i+":"+j] = 0;
+    }
+
+    setChar(i, j, role){
         this.track[i+":"+j] = role;
     }
 
     moveChar(prev_i, prev_j, i, j, role){
-        this.clearHex(prev_i, prev_j);
-        this.setHex(i, j, role);
-    }
-
-    getRouteCells(){
-        return this.coloredCells.route;
-    }
-
-    addColoredCell(type="route", hexagon){
-       this.coloredCells[type].push(hexagon);
+        this.clearChar(prev_i, prev_j);
+        this.setChar(i, j, role);
     }
 
     /**
@@ -48,7 +104,7 @@ export default class HexMap{
     getRandomCell(width, height){
         let x = Math.floor(Math.random() * width);
         let y = Math.floor(Math.random() * height);
-        while(this.getHex(x, y) > 0){
+        while(this.getChar(x, y) > 0){
             x = Math.floor(Math.random() * width);
             y = Math.floor(Math.random() * height);
         }
@@ -132,12 +188,20 @@ export default class HexMap{
         }
     }
 
-    clearColoredCells(type="route"){
-        for(let i = 0; i < this.coloredCells[type].length; i++){
-            this.coloredCells[type][i].ui.remove();
-            if(type === "attack"){
-                this.attackRange = [];
-            }
+    // Use [i, j] as center of range
+    colorRange(type, ci, cj, range){
+        let hexs = this.findCellsWithDist(ci, cj, 1, range).cells;
+        this.#colorHex(type, hexs);
+    }
+
+    colorPath(type, path){
+        this.#colorHex(type, path);
+    }
+
+    #colorHex(type, hexagons){
+        for(let i = 0; i < hexagons.length; i++){
+            let hex = hexagons[i];
+            this.addColor(hex[0], hex[1], type);
         }
     }
 }
