@@ -22,7 +22,7 @@ class Hexagon{
     }
 }
 
-export default class HexMap{
+class HexMap{
     constructor(ui){
         this.ui = ui;
         this.hexmap = [];
@@ -61,6 +61,21 @@ export default class HexMap{
         return this.acceptClick;
     }
 
+    /**
+     * Check if current character can move to cell (i, j).
+     * @param {Number} i 
+     * @param {Number} j 
+     * @returns true if can move
+     */
+    canMove(i, j){
+        let occupied = this.getChar(i, j);
+        if(occupied){
+            // console.log("canMove", occupied);
+            return false;
+        }
+        return true;
+    }
+
     addColor(i, j, type){
         const color = this.types.hasOwnProperty(type) ? this.types[type] : this.types[""];
         let hex = new Hexagon(this.ui, this, i, j, color);
@@ -85,16 +100,64 @@ export default class HexMap{
     }
 
     clearChar(i, j){
-        this.track[i+":"+j] = 0;
+        let character = this.track[i+":"+j];
+        this.track[i+":"+j] = null;
+        return character;
     }
 
-    setChar(i, j, role){
-        this.track[i+":"+j] = role;
+    setChar(i, j, character){
+        this.track[i+":"+j] = character;
     }
 
-    moveChar(prev_i, prev_j, i, j, role){
-        this.clearChar(prev_i, prev_j);
-        this.setChar(i, j, role);
+    moveChar(prev_i, prev_j, i, j){
+        let character = this.clearChar(prev_i, prev_j);
+        this.setChar(i, j, character);
+    }
+
+    getDist(x1, y1, x2, y2){
+        const cellToGrid = (x, y) => {
+            let grid = x%2 === 0 ? [x*2, y*2] : [x*2, y*2 + 1];
+            return grid;
+        }
+        let p1 = cellToGrid(x1, y1);
+        let p2 = cellToGrid(x2, y2);
+        return (Math.abs(p1[0]-p2[0])+Math.abs(p1[1]-p2[1]))/2;
+    }
+
+    /**
+     * Get shortest route from current position (ci, cj) to target (i, j).
+     * @param {Number} i 
+     * @param {Number} j 
+     * @returns route from one cell to another
+     */
+    route(ci, cj, i, j){
+        let path = [];
+        // let ci = this.position[0];
+        // let cj = this.position[1];
+        path.push([ci, cj]);
+        let dist = this.getDist(ci, cj, i, j);
+        let maxDist = dist;
+        while(dist > 0 && path.length <= maxDist){
+            let dists = [];
+            let ns = this.getNeighbors(ci, cj);
+            for(let n = 0; n < ns.length; n++){
+                let ni = ns[n][0];
+                let nj = ns[n][1];
+                if(this.canMove(ni, nj)){
+                    dists.push(this.getDist(ni, nj, i, j));
+                }else{
+                    dists.push(maxDist);
+                }
+            }
+            // console.log("dists - ",dists);
+            let next_i = dists.indexOf(Math.min(...dists));
+            let next = ns[next_i];
+            path.push(next);
+            ci = next[0];
+            cj = next[1];
+            dist = this.getDist(ci, cj, i, j);
+        }
+        return path;
     }
 
     /**
@@ -152,7 +215,7 @@ export default class HexMap{
         let ns = this.getNeighbors(i, j);
         for(let ni = 0; ni < ns.length; ni++){
             let n = ns[ni];
-            if(!this.includeCell(cells, n)) {
+            if(!this.includeCell(cells, n)){
                 cells.push(n);
                 dist.push(depth);
             }
@@ -205,3 +268,5 @@ export default class HexMap{
         }
     }
 }
+
+export { HexMap }

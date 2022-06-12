@@ -26,7 +26,8 @@
  * 5. End policy
  *    - The game will end after player defeat a certain amount of enemies.
  */
-import HexMap from "./modules/hexmap.js";
+import { HexMap } from "./modules/hexmap.js";
+import { NormalSkill } from "./modules/skill.js";
 
 export const W = 60; //width of whole hexagon
 let Mouse = Stage.Mouse;
@@ -37,14 +38,15 @@ function Game(ui, width, height){
     this.hexmap = new HexMap(ui);
     const getMap = () => {return this.hexmap;}
 
-    let player;
-    let enemies = [];
-    let moveWASD = false;
-
     // let globalTime = 0;
     // this.tick = function(dt){
     //     globalTime += dt;
     // }
+
+    let player;
+    let enemies = [];
+    let target = -1;
+    let moveWASD = false;
 
     const CHAR_ROLES = {
         default: 0,
@@ -65,8 +67,11 @@ function Game(ui, width, height){
         // 3. draw enemies
         let [enemy_x, enemy_y] = this.hexmap.getRandomCell(width, height);
         new Character(CHAR_ROLES.enemy).insert(enemy_x, enemy_y);
-        // setAcceptClick(true);
         this.hexmap.setAcceptClick(true);
+
+        // 4. initialize skills
+        let normalSkill = new NormalSkill(this.hexmap, player);
+        player.addSkill("1", normalSkill);
     }
 
     this.handleKeys = function(){
@@ -93,6 +98,13 @@ function Game(ui, width, height){
         if(ui.activeKeys.Space){
             console.log("Key pressed: Space");
         }
+        if(ui.activeKeys.Tab){
+            console.log("Key pressed: Tab");
+            this.toggleEnemyTarget();
+        }
+        if(ui.activeKeys["1"]){
+            console.log("Key pressed: 1");
+        }
     }
 
     this.handleClicks = function(clicked){
@@ -100,13 +112,21 @@ function Game(ui, width, height){
         let cj = clicked[1];
         console.log(ci, cj);
         if(this.hexmap.canClick() && player.getTurn()){
-            if(!player.canMove(ci, cj)){
+            if(!this.hexmap.canMove(ci, cj)){
                 console.log("can click, but cannot move");
             }else{
                 this.hexmap.clearType("move");
                 this.hexmap.setAcceptClick(false);
                 player.stepMove(ci, cj);
             }
+        }
+    }
+
+    this.toggleEnemyTarget = function(){
+        target = (target === enemies.length - 1) ? -1 : target + 1;
+        // console.log("toggleEnemyTarget(), target =", target);
+        if(target >= 0){
+            player.aim(enemies[target]);
         }
     }
 
@@ -126,6 +146,48 @@ function Game(ui, width, height){
             else if(identity === CHAR_ROLES.enemy){
                 this.ui = ui.circle(this,"red");
             }
+            this.skills = {};
+        }
+
+        /**
+         * Insert the character shape to the hexagon map.
+         * @param {*} i 
+         * @param {*} j 
+         */
+        insert(i=0, j=0){
+            const fullHP = 100;
+            this.hp = fullHP;
+            this.level = 1;
+            this.lives = 1;
+            this.range = 3;
+            this.strength = this.level * 100;
+            if(this.identity == CHAR_ROLES.player){
+                this.move(i, j);
+                // this.lives = 3;
+                player = this;
+                this.setTurn(true);
+            }
+            else if(this.identity == CHAR_ROLES.enemy){
+                enemies.push(this);
+                this.move(i, j);
+            }
+            this.ui.add();
+        }
+
+        addSkill(key, skill){
+            this.skills[key] = skill;
+        }
+
+        /**
+         * Aim at an enemy and verify all skills.
+         * @param {Character} enemy 
+         */
+        aim(enemy){
+            for(const key in this.skills){
+                let skill = this.skills[key];
+                let valid = skill.setAttackee(enemy);
+                console.log("aim with skill", key, "valid ?", valid);
+            }
         }
 
         getTurn(){
@@ -139,123 +201,55 @@ function Game(ui, width, height){
             }
         }
 
-        /**
-         * Insert the character shape to the hexagon map.
-         * @param {*} i 
-         * @param {*} j 
-         */
-        insert(i=0, j=0){
-            this.hp = 100;
-            this.level = 1;
-            this.lives = 1;
-            this.range = 3;
-            this.strength = this.level * 100;
-            if(this.identity == CHAR_ROLES.player){
-                this.move(i, j);
-                this.lives = 3;
-                player = this;
-                this.setTurn(true);
-            }
-            else if(this.identity == CHAR_ROLES.enemy){
-                enemies.push(this);
-                this.move(i, j);
-            }
-            this.ui.add();
+        getHP(){
+            return this.hp;
         }
 
-        /**
-         * Check if the target cell is in current attack range.
-         * @param {Number} i 
-         * @param {Number} j 
-         * @returns true if is under attack
-         */
-        canAttack(i, j){
-            if(includeCell(attackRange, [i, j])) return true;
-            return false;
+        setHP(hp){
+            this.hp = hp;
         }
 
-        getCombatProperties(){
-            let combat = {
-                position: this.position,
-                hp: this.hp,
-                strength: this.strength,
-                range: this.range
-            }
-            return combat;
+        getLevel(){
+            return this.level;
         }
 
-        /**
-         * Check if current character can move to cell (i, j).
-         * @param {Number} i 
-         * @param {Number} j 
-         * @returns true if can move
-         */
-        canMove(i, j){
-            let occupied = this.hexmap.getChar(i, j);
-            if(occupied !== 0){
-                // console.log("canMove", occupied);
-                return false;
-            }
-            return true;
+        setLevel(level){
+            this.level = level;
+        }
+
+        reduceLives(){
+            this.lives--;
+            this.hp = fullHP;
+        }
+
+        getLives(){
+            return this.lives;
+        }
+
+        setLives(lives){
+            this.lives = lives;
+        }
+
+        getStrength(){
+            return this.strength;
+        }
+
+        setStrength(strength){
+            this.strength = strength;
         }
 
         move(i, j){
             let prev_i = this.position[0];
             let prev_j = this.position[1];
-            if(this.canMove(i, j)){
+            if(this.hexmap.canMove(i, j)){
                 this.position[0] = i;
                 this.position[1] = j;
-                this.hexmap.moveChar(prev_i, prev_j, i, j, this.identity);
+                // this.hexmap.moveChar(prev_i, prev_j, i, j, this.identity);
+                this.hexmap.moveChar(prev_i, prev_j, i, j);
                 this.ui.move();
             }else{
                 console.log("Cannot move");
             }
-        }
-
-        getDist(x1, y1, x2, y2){
-            const cellToGrid = (x, y) => {
-                let grid = x%2 === 0 ? [x*2, y*2] : [x*2, y*2 + 1];
-                return grid;
-            }
-            let p1 = cellToGrid(x1, y1);
-            let p2 = cellToGrid(x2, y2);
-            return (Math.abs(p1[0]-p2[0])+Math.abs(p1[1]-p2[1]))/2;
-        }
-
-        /**
-         * Get shortest route from current position to target (i, j).
-         * @param {Number} i 
-         * @param {Number} j 
-         * @returns route from one cell to another
-         */
-        route(i, j){
-            let path = [];
-            let ci = this.position[0];
-            let cj = this.position[1];
-            path.push([ci, cj]);
-            let dist = this.getDist(ci, cj, i, j);
-            let maxDist = dist;
-            while(dist > 0 && path.length <= maxDist){
-                let dists = [];
-                let ns = this.hexmap.getNeighbors(ci, cj);
-                for(let n = 0; n < ns.length; n++){
-                    let ni = ns[n][0];
-                    let nj = ns[n][1];
-                    if(this.canMove(ni, nj)){
-                        dists.push(this.getDist(ni, nj, i, j));
-                    }else{
-                        dists.push(maxDist);
-                    }
-                }
-                // console.log("dists - ",dists);
-                let next_i = dists.indexOf(Math.min(...dists));
-                let next = ns[next_i];
-                path.push(next);
-                ci = next[0];
-                cj = next[1];
-                dist = this.getDist(ci, cj, i, j);
-            }
-            return path;
         }
 
         /**
@@ -265,7 +259,7 @@ function Game(ui, width, height){
          */
         stepMove(i, j){
             // move player to the clicked hexagon
-            let route = player.route(i, j);
+            let route = this.hexmap.route(this.position[0], this.position[1], i, j);
             this.hexmap.setAcceptClick(false);
             this.hexmap.colorPath("route", route);
             // move player to cells in the route one by one
@@ -277,7 +271,7 @@ function Game(ui, width, height){
             // clear all colored cells after arrival
             setTimeout(()=>{
                 this.hexmap.clearType("route");
-                this.setTurn(false);
+                this.setTurn(true);
                 this.hexmap.setAcceptClick(true);
             }, route.length * 500)
         }
@@ -298,7 +292,8 @@ Stage(function(stage){
         "a": false,
         "s": false,
         "d": false,
-        "q": false
+        "q": false,
+        "1": false
     }
 
     stage.background('#eeeeee');
