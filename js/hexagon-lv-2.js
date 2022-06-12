@@ -26,6 +26,7 @@
  * 5. End policy
  *    - The game will end after player defeat a certain amount of enemies.
  */
+import { CHAR_ROLES, Character } from "./modules/character.js";
 import { HexMap } from "./modules/hexmap.js";
 import { NormalSkill } from "./modules/skill.js";
 
@@ -36,7 +37,6 @@ const SQRT3 = Math.sqrt(3);
 function Game(ui, width, height){
     this.world = planck.World();
     this.hexmap = new HexMap(ui);
-    const getMap = () => {return this.hexmap;}
 
     // let globalTime = 0;
     // this.tick = function(dt){
@@ -48,13 +48,6 @@ function Game(ui, width, height){
     let target = -1;
     let moveWASD = false;
 
-    const CHAR_ROLES = {
-        default: 0,
-        player: 3,
-        enemy: 1,
-        companion: 2
-    }
-
     this.start = function(){
         // 1. draw hexagon grid
         this.hexmap.initialize(width, height);
@@ -62,11 +55,14 @@ function Game(ui, width, height){
         // 2. draw player
         let x = Math.floor(width/2);
         let y = Math.floor(height/2);
-        new Character(CHAR_ROLES.player).insert(x, y);
+        player = new Character(ui, this.hexmap, CHAR_ROLES.player);
+        player.draw(x, y);
 
         // 3. draw enemies
         let [enemy_x, enemy_y] = this.hexmap.getRandomCell(width, height);
-        new Character(CHAR_ROLES.enemy).insert(enemy_x, enemy_y);
+        let enemy = new Character(ui, this.hexmap, CHAR_ROLES.enemy);
+        enemy.draw(enemy_x, enemy_y);
+        enemies.push(enemy);
         this.hexmap.setAcceptClick(true);
 
         // 4. initialize skills
@@ -104,6 +100,7 @@ function Game(ui, width, height){
         }
         if(ui.activeKeys["1"]){
             console.log("Key pressed: 1");
+            player.attack("1");
         }
     }
 
@@ -127,153 +124,8 @@ function Game(ui, width, height){
         // console.log("toggleEnemyTarget(), target =", target);
         if(target >= 0){
             player.aim(enemies[target]);
-        }
-    }
-
-    class Character{
-        constructor(identity){
-            this.hexmap = getMap();
-            this.identity = identity;
-            this.position = [0, 0];
-            this.hp = 0;
-            this.lives = 0;
-            this.level = 0;
-            this.range = 0;
-            this.isTurn = false;
-            if(identity === CHAR_ROLES.player){
-                this.ui = ui.circle(this);
-            }
-            else if(identity === CHAR_ROLES.enemy){
-                this.ui = ui.circle(this,"red");
-            }
-            this.skills = {};
-        }
-
-        /**
-         * Insert the character shape to the hexagon map.
-         * @param {*} i 
-         * @param {*} j 
-         */
-        insert(i=0, j=0){
-            const fullHP = 100;
-            this.hp = fullHP;
-            this.level = 1;
-            this.lives = 1;
-            this.range = 3;
-            this.strength = this.level * 100;
-            if(this.identity == CHAR_ROLES.player){
-                this.move(i, j);
-                // this.lives = 3;
-                player = this;
-                this.setTurn(true);
-            }
-            else if(this.identity == CHAR_ROLES.enemy){
-                enemies.push(this);
-                this.move(i, j);
-            }
-            this.ui.add();
-        }
-
-        addSkill(key, skill){
-            this.skills[key] = skill;
-        }
-
-        /**
-         * Aim at an enemy and verify all skills.
-         * @param {Character} enemy 
-         */
-        aim(enemy){
-            for(const key in this.skills){
-                let skill = this.skills[key];
-                let valid = skill.setAttackee(enemy);
-                console.log("aim with skill", key, "valid ?", valid);
-            }
-        }
-
-        getTurn(){
-            return this.isTurn;
-        }
-
-        setTurn(turn){
-            this.isTurn = turn;
-            if(turn){
-                this.hexmap.colorRange("move", this.position[0], this.position[1], this.range);
-            }
-        }
-
-        getHP(){
-            return this.hp;
-        }
-
-        setHP(hp){
-            this.hp = hp;
-        }
-
-        getLevel(){
-            return this.level;
-        }
-
-        setLevel(level){
-            this.level = level;
-        }
-
-        reduceLives(){
-            this.lives--;
-            this.hp = fullHP;
-        }
-
-        getLives(){
-            return this.lives;
-        }
-
-        setLives(lives){
-            this.lives = lives;
-        }
-
-        getStrength(){
-            return this.strength;
-        }
-
-        setStrength(strength){
-            this.strength = strength;
-        }
-
-        move(i, j){
-            let prev_i = this.position[0];
-            let prev_j = this.position[1];
-            if(this.hexmap.canMove(i, j)){
-                this.position[0] = i;
-                this.position[1] = j;
-                // this.hexmap.moveChar(prev_i, prev_j, i, j, this.identity);
-                this.hexmap.moveChar(prev_i, prev_j, i, j);
-                this.ui.move();
-            }else{
-                console.log("Cannot move");
-            }
-        }
-
-        /**
-         * Move player from original to goal with cells colored
-         * @param {number} i 
-         * @param {number} j 
-         */
-        stepMove(i, j){
-            // move player to the clicked hexagon
-            let route = this.hexmap.route(this.position[0], this.position[1], i, j);
-            this.hexmap.setAcceptClick(false);
-            this.hexmap.colorPath("route", route);
-            // move player to cells in the route one by one
-            for(let r = 1; r < route.length; r++){
-                setTimeout(()=>{
-                    player.move(route[r][0], route[r][1]);
-                }, r * 500)
-            }
-            // clear all colored cells after arrival
-            setTimeout(()=>{
-                this.hexmap.clearType("route");
-                this.setTurn(true);
-                this.hexmap.setAcceptClick(true);
-            }, route.length * 500)
+        }else{
+            player.unaim();
         }
     }
 }

@@ -93,6 +93,10 @@ class NormalSkill extends Skill{
         }
         return false;
     }
+
+    unsetAttackee(){
+        this.attackee = null;
+    }
 }
 
 export { NormalSkill }
