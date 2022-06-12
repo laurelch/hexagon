@@ -149,6 +149,7 @@ function Game(ui, width, height){
             this.level = 1;
             this.lives = 1;
             this.range = 3;
+            this.strength = this.level * 100;
             if(this.identity == CHAR_ROLES.player){
                 this.move(i, j);
                 this.lives = 3;
@@ -168,9 +169,19 @@ function Game(ui, width, height){
          * @param {Number} j 
          * @returns true if is under attack
          */
-         canAttack(i, j){
+        canAttack(i, j){
             if(includeCell(attackRange, [i, j])) return true;
             return false;
+        }
+
+        getCombatProperties(){
+            let combat = {
+                position: this.position,
+                hp: this.hp,
+                strength: this.strength,
+                range: this.range
+            }
+            return combat;
         }
 
         /**
