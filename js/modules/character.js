@@ -139,7 +139,7 @@ class Character{
     move(i, j){
         let prev_i = this.position[0];
         let prev_j = this.position[1];
-        this.unaim();
+        if(this.target) this.aim(this.target);
         if(this.hexmap.canMove(i, j)){
             this.position[0] = i;
             this.position[1] = j;

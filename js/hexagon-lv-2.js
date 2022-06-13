@@ -230,6 +230,27 @@ Stage(function(stage){
                 }
             }
         },
+        aim: function(){
+            let name = "aim";
+            let img = Stage.image(name).pin({
+                align: 0.28
+            })
+            return {
+                add: function(i, j){
+                    let [x, y] = getPos(i, j);
+                    img.scale(0.8,0.8);
+                    img.appendTo(board).offset(x, y);
+                },
+                move: function(i, j){
+                    let [x, y] = getPos(i, j);
+                    img.scale(0.8,0.8);
+                    img.appendTo(board).offset(x, y);
+                },
+                remove: function(){
+                    board.remove(img);
+                }
+            }
+        },
         skill: function(skillKey){
             let name = "skill-"+skillKey;
             return {

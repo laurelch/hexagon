@@ -20,6 +20,8 @@ class NormalSkill extends Skill{
         this.attackee = null;
         this.ui = ui.skill("1");
         // this.ui.add();
+        this.uiAim = ui.aim();
+        this.valid = false;
     }
 
     attack(enemies){
@@ -50,6 +52,7 @@ class NormalSkill extends Skill{
      * @returns updated attackee
      */
     perform(attackee){
+        if(!this.valid) return false;
         let hp = Math.max(0, attackee.getHP() - this.damage());
         if(hp === 0){
             if(attackee.getLives() > 1){
@@ -86,6 +89,7 @@ class NormalSkill extends Skill{
         let i = this.holder.position[0];
         let j = this.holder.position[1];
         let distance = this.map.getDist(i, j, x, y);
+        this.uiAim.move(x,y);
         return distance <= this.effectiveDist;
     }
 
@@ -97,6 +101,7 @@ class NormalSkill extends Skill{
     setAttackee(attackee){
         if(this.validify(attackee)){
             this.attackee = attackee;
+            this.valid = true;
             return true;
         }
         return false;
@@ -104,6 +109,8 @@ class NormalSkill extends Skill{
 
     unsetAttackee(){
         this.attackee = null;
+        this.valid = false;
+        this.uiAim.remove();
         this.ui.invalid();
     }
 }
