@@ -3,7 +3,7 @@ font-family: sans-serif;
     overflow: hidden;
 }
 
-.about,.hint {
+.about,.hint,.skills {
     position: absolute;
     padding: 0.7em 1em;
     background: rgba(240, 240, 240, 0.8);
@@ -17,6 +17,37 @@ font-family: sans-serif;
 .hint {
     left: 0.5em;
     bottom: 0.5em;
+}
+
+.skills {
+    right: 0.5em;
+    top: 0.5em;
+    width: 6em;
+    height: 30em;
+    background-color: rgba(240, 250, 255, 0.8);
+}
+
+.skills img {
+    position: absolute;
+    right: 0.5em;
+    top: 0.5em;
+    width: 5em;
+}
+
+#skill-1-color {
+    z-index: 1;
+}
+
+#skill-1-grey {
+    z-index: 2;
+}
+
+.skills p {
+    position: absolute;
+    text-align: right;
+    right: 3.2em;
+    top: 0.8em;
+    font-size: 2em;
 }
 
 .loading {

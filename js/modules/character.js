@@ -23,7 +23,8 @@ class Character{
             this.ui = ui.circle(this,"red");
         }
         this.skills = {};
-        this.aim = null;
+        this.target = null;
+        this.fullHP = 100;
     }
 
     /**
@@ -32,8 +33,7 @@ class Character{
      * @param {*} j 
      */
     draw(i=0, j=0){
-        const fullHP = 100;
-        this.hp = fullHP;
+        this.hp = this.fullHP;
         this.level = 1;
         this.lives = 1;
         this.range = 3;
@@ -63,14 +63,16 @@ class Character{
         for(const key in this.skills){
             let skill = this.skills[key];
             let valid = skill.setAttackee(enemy);
-            this.aim = enemy;
+            if(valid) skill.ui.valid();
+            else skill.ui.invalid();
+            this.target = enemy;
             console.log("aim with skill", key, "valid ?", valid);
         }
     }
 
     unaim(){
         console.log("unaim");
-        this.aim = null;
+        this.target = null;
         for(const key in this.skills){
             this.skills[key].unsetAttackee();
         }
@@ -78,7 +80,8 @@ class Character{
 
     attack(skillKey){
         let skill = this.skills[skillKey];
-        skill.perform(enemy);
+        skill.perform(this.target);
+        console.log("attack",this.target.getHP());
     }
 
     getTurn(){
@@ -110,7 +113,11 @@ class Character{
 
     reduceLives(){
         this.lives--;
-        this.hp = fullHP;
+        this.hp = this.fullHP;
+    }
+
+    die(){
+        this.ui.remove();
     }
 
     getLives(){
@@ -132,6 +139,7 @@ class Character{
     move(i, j){
         let prev_i = this.position[0];
         let prev_j = this.position[1];
+        this.unaim();
         if(this.hexmap.canMove(i, j)){
             this.position[0] = i;
             this.position[1] = j;

@@ -7,17 +7,19 @@
  */
 
 class Skill{
-    constructor(map, holder){
+    constructor(ui, map, holder){
         this.map = map;
         this.holder = holder;
     }
 }
 
 class NormalSkill extends Skill{
-    constructor(map, holder, effectiveDist=5){
-        super(map, holder);
+    constructor(ui, map, holder, effectiveDist=5){
+        super(ui, map, holder);
         this.effectiveDist = effectiveDist;
         this.attackee = null;
+        this.ui = ui.skill("1");
+        // this.ui.add();
     }
 
     attack(enemies){
@@ -50,12 +52,18 @@ class NormalSkill extends Skill{
     perform(attackee){
         let hp = Math.max(0, attackee.getHP() - this.damage());
         if(hp === 0){
-            if(attackee.getLives() > 0){
+            if(attackee.getLives() > 1){
                 attackee.reduceLives();
+                return true;
+            }else{
+                attackee.die();
+                this.unsetAttackee();
+                return false;
             }
         }else{
             attackee.setHP(hp);
         }
+        return true;
     }
 
     /**
@@ -96,6 +104,7 @@ class NormalSkill extends Skill{
 
     unsetAttackee(){
         this.attackee = null;
+        this.ui.invalid();
     }
 }
 

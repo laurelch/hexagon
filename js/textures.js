@@ -1,4 +1,12 @@
 import { W } from "./hexagon-lv-2.js";
+// Adding texture atlas
+Stage({
+    name : 'skill-1', // optional
+    image : {
+      src : '../img/skill-1.png',
+    //   ratio : 1, // optional, for high-res images
+    }
+});
 
 Stage({
     textures : {

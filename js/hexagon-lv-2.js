@@ -66,7 +66,7 @@ function Game(ui, width, height){
         this.hexmap.setAcceptClick(true);
 
         // 4. initialize skills
-        let normalSkill = new NormalSkill(this.hexmap, player);
+        let normalSkill = new NormalSkill(ui, this.hexmap, player);
         player.addSkill("1", normalSkill);
     }
 
@@ -100,7 +100,11 @@ function Game(ui, width, height){
         }
         if(ui.activeKeys["1"]){
             console.log("Key pressed: 1");
-            player.attack("1");
+            let alive = player.attack("1");
+            if(!alive){
+                target = -1;
+                enemies.splice(target,1);
+            }
         }
     }
 
@@ -192,8 +196,8 @@ Stage(function(stage){
             }
         },
         circle: function(circle, color="green"){
-            let img_name = "o-"+color;
-            let img = Stage.image(img_name).pin({
+            let name = "o-"+color;
+            let img = Stage.image(name).pin({
                 align: 0
             });
             return {
@@ -211,8 +215,8 @@ Stage(function(stage){
             }
         },
         hex_color: function(hex, color){
-            let img_name = "hex-"+color; // red, yellow, green, blue
-            let img = Stage.image(img_name).pin({
+            let name = "hex-" + color; // red, yellow, green, blue
+            let img = Stage.image(name).pin({
                 align: 0
             })
             return {
@@ -223,6 +227,19 @@ Stage(function(stage){
                 },
                 remove: function(){
                     board.remove(img);
+                }
+            }
+        },
+        skill: function(skillKey){
+            let name = "skill-"+skillKey;
+            return {
+                valid: function(){
+                    let img = document.getElementById(name+"-color");
+                    img.style.zIndex = 3;
+                },
+                invalid: function(){
+                    let img = document.getElementById(name+"-color");
+                    img.style.zIndex = 1;
                 }
             }
         },
@@ -238,14 +255,14 @@ Stage(function(stage){
 
     stage.on('viewport', function(size) {
         meta.pin({
-        scaleMode : 'in-pad',
-        scaleWidth : size.width,
-        scaleHeight : size.height
+            scaleMode : 'in-pad',
+            scaleWidth : size.width,
+            scaleHeight : size.height
         });
         world.pin({
-        scaleMode : 'in-pad',
-        scaleWidth : size.width,
-        scaleHeight : size.height
+            scaleMode : 'in-pad',
+            scaleWidth : size.width,
+            scaleHeight : size.height
         });
     });
 
