@@ -51,6 +51,7 @@ function Game(ui, width, height){
     this.start = function(){
         // 1. draw hexagon grid
         this.hexmap.initialize(width, height);
+        this.hexmap.setAcceptClick(true);
 
         // 2. draw player
         let x = Math.floor(width/2);
@@ -59,15 +60,20 @@ function Game(ui, width, height){
         player.draw(x, y);
 
         // 3. draw enemies
-        let [enemy_x, enemy_y] = this.hexmap.getRandomCell(width, height);
-        let enemy = new Character(ui, this.hexmap, CHAR_ROLES.enemy);
-        enemy.draw(enemy_x, enemy_y);
-        enemies.push(enemy);
-        this.hexmap.setAcceptClick(true);
+        this.addEnemy(2);
 
         // 4. initialize skills
         let normalSkill = new NormalSkill(ui, this.hexmap, player);
         player.addSkill("1", normalSkill);
+    }
+
+    this.addEnemy = function(count=1){
+        for(let i = 0; i < count; i++){
+            let [enemy_x, enemy_y] = this.hexmap.getRandomCell(width, height);
+            let enemy = new Character(ui, this.hexmap, CHAR_ROLES.enemy);
+            enemy.draw(enemy_x, enemy_y);
+            enemies.push(enemy);
+        }
     }
 
     this.handleKeys = function(){
@@ -98,12 +104,18 @@ function Game(ui, width, height){
             console.log("Key pressed: Tab");
             this.toggleEnemyTarget();
         }
+        if(ui.activeKeys.n){
+            console.log("Key pressed: N");
+            this.addEnemy();
+        }
         if(ui.activeKeys["1"]){
-            console.log("Key pressed: 1");
-            let alive = player.attack("1");
-            if(!alive){
-                target = -1;
-                enemies.splice(target,1);
+            console.log("Key pressed: 1, Target =", target);
+            if(target >= 0){
+                let alive = player.attack("1");
+                if(!alive){
+                    enemies.splice(target,1);
+                    target = -1;
+                }
             }
         }
     }
@@ -149,6 +161,7 @@ Stage(function(stage){
         "s": false,
         "d": false,
         "q": false,
+        "n": false,
         "1": false
     }
 

@@ -24,6 +24,7 @@ class Character{
         }
         this.skills = {};
         this.target = null;
+        this.attackeeValid = false;
         this.fullHP = 100;
     }
 
@@ -48,6 +49,7 @@ class Character{
             // enemies.push(this);
             this.move(i, j);
         }
+        this.hexmap.setChar(i, j, this.identity);
         this.ui.add();
     }
 
@@ -62,11 +64,11 @@ class Character{
     aim(enemy){
         for(const key in this.skills){
             let skill = this.skills[key];
-            let valid = skill.setAttackee(enemy);
-            if(valid) skill.ui.valid();
+            this.attackeeValid = skill.setAttackee(enemy);
+            if(this.attackeeValid) skill.ui.valid();
             else skill.ui.invalid();
             this.target = enemy;
-            console.log("aim with skill", key, "valid ?", valid);
+            console.log("aim with skill", key, "valid ?", this.attackeeValid);
         }
     }
 
@@ -79,9 +81,11 @@ class Character{
     }
 
     attack(skillKey){
+        if(!this.attackeeValid) return true;
         let skill = this.skills[skillKey];
-        skill.perform(this.target);
-        console.log("attack",this.target.getHP());
+        let targetAlive = skill.perform(this.target);
+        if(!targetAlive) this.target = null;
+        return targetAlive;
     }
 
     getTurn(){
@@ -91,7 +95,7 @@ class Character{
     setTurn(turn){
         this.isTurn = turn;
         if(turn){
-            this.hexmap.colorRange("move", this.position[0], this.position[1], this.range);
+            // this.hexmap.colorRan ge("move", this.position[0], this.position[1], this.range);
         }
     }
 

@@ -167,7 +167,7 @@ class HexMap{
     getRandomCell(width, height){
         let x = Math.floor(Math.random() * width);
         let y = Math.floor(Math.random() * height);
-        while(this.getChar(x, y) > 0){
+        while(this.getChar(x, y)){
             x = Math.floor(Math.random() * width);
             y = Math.floor(Math.random() * height);
         }

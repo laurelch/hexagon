@@ -14,7 +14,7 @@ class Skill{
 }
 
 class NormalSkill extends Skill{
-    constructor(ui, map, holder, effectiveDist=5){
+    constructor(ui, map, holder, effectiveDist=6){
         super(ui, map, holder);
         this.effectiveDist = effectiveDist;
         this.attackee = null;
