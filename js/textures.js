@@ -3,7 +3,8 @@ import { W } from "./hexagon-lv-2.js";
 Stage({
     name : 'aim', // optional
     image : {
-      src : '../img/aim.png'
+      src : 'img/aim.png'
+    // src : "https://github.com/laurelch/hexagon/blob/main/img/aim.png"
     //   ratio : 1, // optional, for high-res images
     }
 });
